@@ -1,0 +1,4 @@
+fn x
+    1 1 add dup dup 
+end
+
