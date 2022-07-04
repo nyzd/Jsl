@@ -1,0 +1,25 @@
+{
+    "name": "jsl",
+    "displayName": "jsl",
+    "description": "Jsl syntax",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.68.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "jsl",
+            "aliases": ["jsl", "jsl"],
+            "extensions": [".jsl"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "jsl",
+            "scopeName": "source.jsl",
+            "path": "./syntaxes/jsl.tmLanguage.json"
+        }]
+    }
+}
