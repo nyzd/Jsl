@@ -20,6 +20,17 @@ impl Function {
     }
 }
 
+struct Variable {
+    name: String,
+    value: u32,
+}
+
+impl Variable {
+    pub fn new(name: String, value: u32) -> Self {
+        Self { name, value }
+    }
+}
+
 fn is_string_numeric(str: String) -> bool {
     for c in str.chars() {
         if !c.is_numeric() {
@@ -32,6 +43,7 @@ fn is_string_numeric(str: String) -> bool {
 struct Interpreter {
     pub stack: Stack,
     pub functions: Vec<Function>,
+    pub storage: Vec<Variable>
 }
 
 impl Interpreter {
@@ -39,6 +51,7 @@ impl Interpreter {
         Self {
             stack: Stack::new(),
             functions: vec![],
+            storage: vec![],
         }
     }
 
@@ -70,8 +83,18 @@ impl Interpreter {
                     let push = self.stack.pop() * self.stack.pop();
                     self.stack.push(push);
                 }
-                &"print" => {
+                &"put" => {
                     println!("{}", self.stack.pop());
+                }
+                &"putstr" => {
+                    loop {
+                        let pop = self.stack.pop();
+                        if pop == 0 {
+                            break;
+                        } else {
+                            print!("{}", pop as char)
+                        }
+                    }
                 }
                 &"fn" => {
                     // find function name
@@ -143,6 +166,29 @@ impl Interpreter {
                     self.stack.push(0);
                 }
 
+                &"drop" => {
+                    self.stack.pop();
+                }
+
+                &"str" => {
+                    // Next element in word will be a string
+                    let content = aschar[index + 1];
+                    
+                    iter.next();
+
+                    // get word as a ASCII
+                    for byte in content.as_bytes().iter().rev() {
+                        self.stack.push(*byte);
+                    }
+                }
+
+                &"var" => {
+                    let var_name  = aschar[index + 1];
+                    let var_value = aschar[index + 2];
+                    
+                    self.storage.push(Variable::new(var_name.to_string(), var_value.parse::<u32>().unwrap()));
+                }
+
                 _ => {
                     // maybe its a function name ?
                     match self.functions.iter().position(|f| f.name == word.to_string()) {
@@ -151,22 +197,30 @@ impl Interpreter {
                         },
                         None => {}
                     };
+                    
+                    match self.storage.iter().position(|v| v.name == word.to_string()) {
+                        Some(ok) => {
+                            self.stack.push(self.storage[ok].value.clone().try_into().unwrap());
+                        },
+                        None => {}
+                    }
                 }
             }
 
-            println!("{:?}", self.stack.items);
             index += 1;
         }
     }
 }
 
 fn main() -> io::Result<()> { 
+    let std = include_str!("./std/std.jsl");
     let args: Vec<String> = env::args().collect();
     if args.len() < 1 {
         panic!("Args is not valid"); 
     }
     let mut file = File::open(&args[1])?;
     let mut contents = String::new();
+    contents.push_str(&(std.to_owned() + "\n"));
     file.read_to_string(&mut contents)?;
 
     let mut i = Interpreter::new();
