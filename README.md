@@ -1,6 +1,11 @@
 # Jsl
 Just a stack based language
 
+# Build
+```cargo build```
+
+```./target/debug/jsl source.jsl```
+
 # Functions
 ```
 fn x
@@ -52,7 +57,7 @@ this will return
 GOOD
 ```
 # Var
-`var` is much like functions, but var holds value not expresion, when its called value of var will pushed to the stack
+`var` is much like functions, but var holds value not expression, when its called value of var will pushed to the stack
 example:
 ```
 var x 1
