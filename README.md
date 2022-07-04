@@ -1,6 +1,11 @@
 # Jsl
 Just a stack based language
 
+# Build
+```cargo build```
+
+```./target/debug/jsl source.jsl```
+
 # Functions
 ```
 fn x
