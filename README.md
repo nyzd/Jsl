@@ -56,12 +56,3 @@ this will return
 ```
 GOOD
 ```
-# Var
-`var` is much like functions, but var holds value not expression, when its called value of var will pushed to the stack
-example:
-```
-var x 1
-
-x put
-```
-this will return `1`
