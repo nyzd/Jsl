@@ -1,1 +1,3 @@
-\n
+macro x \n str HelloWorld putstr end
+
+1 1 add 2 eq then x

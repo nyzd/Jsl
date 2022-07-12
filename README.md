@@ -6,6 +6,13 @@ Just a stack based language
 
 ```./target/debug/jsl source.jsl```
 
+# Debug
+Show the final stack with `--stack` flag
+
+example:
+
+```./target/debug/jsl source.jsl --stack```
+
 # Macros
 ```
 macro x
@@ -49,7 +56,7 @@ will return `1`
 `then` runs function if the top of stack is true
 example:
 ```
-fn x str GOOD putstr end
+macro x str GOOD putstr end
 1 1 eq then x
 ```
 this will return 
