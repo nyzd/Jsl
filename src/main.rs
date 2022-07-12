@@ -5,12 +5,12 @@ use std::io;
 use std::io::prelude::*;
 
 #[derive(Debug)]
-struct Function {
+struct Macro {
     name: String,
     body: String,
 }
 
-impl Function {
+impl Macro {
     pub fn new(name: String, body: String) -> Self {
         Self { name, body }
     }
@@ -27,7 +27,7 @@ fn is_string_numeric(str: String) -> bool {
 
 struct Interpreter {
     pub stack: Stack,
-    pub functions: Vec<Function>,
+    pub functions: Vec<Macro>,
 }
 
 impl Interpreter {
@@ -77,7 +77,7 @@ impl Interpreter {
                         print!("{}", pop as char)
                     }
                 },
-                &"fn" => {
+                &"macro" => {
                     // find function name
                     let fn_name = aschar[index + 1];
                     let mut fn_body = String::new();
@@ -94,7 +94,7 @@ impl Interpreter {
                     }
 
                     self.functions
-                        .push(Function::new(fn_name.to_string(), fn_body));
+                        .push(Macro::new(fn_name.to_string(), fn_body));
                 }
 
                 &"eq" => {
