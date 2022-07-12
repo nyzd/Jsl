@@ -6,13 +6,13 @@ Just a stack based language
 
 ```./target/debug/jsl source.jsl```
 
-# Functions
+# Macros
 ```
-fn x
+macro x
   1 2 add
 end
 ```
-you call run function by calling function name
+if you call macro compiler will run body of macro
 for example:
 ```
 x put
