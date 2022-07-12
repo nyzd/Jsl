@@ -16,17 +16,6 @@ impl Function {
     }
 }
 
-struct Variable {
-    name: String,
-    value: u32,
-}
-
-impl Variable {
-    pub fn new(name: String, value: u32) -> Self {
-        Self { name, value }
-    }
-}
-
 fn is_string_numeric(str: String) -> bool {
     for c in str.chars() {
         if !c.is_numeric() {
@@ -39,7 +28,6 @@ fn is_string_numeric(str: String) -> bool {
 struct Interpreter {
     pub stack: Stack,
     pub functions: Vec<Function>,
-    pub storage: Vec<Variable>,
 }
 
 impl Interpreter {
@@ -47,7 +35,6 @@ impl Interpreter {
         Self {
             stack: Stack::new(),
             functions: vec![],
-            storage: vec![],
         }
     }
 
@@ -166,16 +153,6 @@ impl Interpreter {
                     }
                 }
 
-                &"var" => {
-                    let var_name = aschar[index + 1];
-                    let var_value = aschar[index + 2];
-
-                    self.storage.push(Variable::new(
-                        var_name.to_string(),
-                        var_value.parse::<u32>().unwrap(),
-                    ));
-                }
-
                 _ => {
                     // maybe its a function name ?
                     match self
@@ -188,14 +165,6 @@ impl Interpreter {
                         }
                         None => {}
                     };
-
-                    match self.storage.iter().position(|v| v.name == word.to_string()) {
-                        Some(ok) => {
-                            self.stack
-                                .push(self.storage[ok].value.clone().try_into().unwrap());
-                        }
-                        None => {}
-                    }
                 }
             }
 
@@ -217,6 +186,15 @@ fn main() -> io::Result<()> {
 
     let mut i = Interpreter::new();
     i.parse(contents);
+
+    match args.get(2) {
+        Some(arg) => {
+            if arg == "--stack" {
+                println!("{:?}", i.stack.items);
+            }
+        }
+        None => {}
+    }
 
     Ok(())
 }
