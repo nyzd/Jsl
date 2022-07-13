@@ -1,2 +1,10 @@
 macro \n 10 end
 macro print dup put end
+
+macro True str true end
+macro False str false end
+
+macro bool
+    dup 1 eq then True
+    dup 0 eq then False
+end

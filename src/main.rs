@@ -79,8 +79,8 @@ impl Interpreter {
                 },
                 &"macro" => {
                     // find function name
-                    let fn_name = aschar[index + 1];
-                    let mut fn_body = String::new();
+                    let macro_name = aschar[index + 1];
+                    let mut macro_body = String::new();
 
                     index += 2;
 
@@ -88,13 +88,13 @@ impl Interpreter {
                     iter.next();
 
                     while aschar[index] != "end" {
-                        fn_body.push_str(&(aschar[index].to_owned() + " "));
+                        macro_body.push_str(&(aschar[index].to_owned() + " "));
                         index += 1;
                         iter.next();
                     }
 
                     self.functions
-                        .push(Macro::new(fn_name.to_string(), fn_body));
+                        .push(Macro::new(macro_name.to_string(), macro_body));
                 }
 
                 &"eq" => {
@@ -128,6 +128,16 @@ impl Interpreter {
                     self.stack.push(item);
                     self.stack.push(item);
                 }
+                &"dup2" => {
+                    // Duplicate top of stack
+                    let item1 = self.stack.pop();
+                    let item2 = self.stack.pop();
+
+                    self.stack.push(item1);
+                    self.stack.push(item2);
+                    self.stack.push(item1);
+                    self.stack.push(item2);
+                }
 
                 &"true" => {
                     self.stack.push(1);
@@ -150,6 +160,25 @@ impl Interpreter {
                     // get word as a ASCII
                     for byte in content.as_bytes().iter().rev() {
                         self.stack.push(*byte);
+                    }
+                }
+
+                &"times" => {
+                    // Run code x times
+                    let x = self.stack.pop();
+                    let mut times_body = String::new();
+
+                    index += 1;
+
+                    // Copy body
+                    while aschar[index] != "done" {
+                        times_body.push_str(&(aschar[index].to_owned() + " "));
+                        index += 1;
+                        iter.next();
+                    }
+
+                    for _i in 0..x {
+                        self.parse(times_body.clone());
                     }
                 }
 
