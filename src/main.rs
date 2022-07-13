@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
+mod builtin;
+
 #[derive(Debug)]
 struct Macro {
     name: String,
@@ -223,7 +225,7 @@ impl Interpreter {
                 }
 
                 _ => {
-                    // maybe its a function name ?
+                    // maybe its a macro name ?
                     match self
                         .functions
                         .iter()
@@ -234,6 +236,9 @@ impl Interpreter {
                         }
                         None => {}
                     };
+
+                    // Or built in function ?
+                    builtin::run_built_int(word, self.stack.pop());
                 }
             }
 
