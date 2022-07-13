@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
+mod builtin;
+
 #[derive(Debug)]
 struct Macro {
     name: String,
@@ -17,12 +19,18 @@ impl Macro {
 }
 
 fn is_string_numeric(str: String) -> bool {
+    let mut result = false;
     for c in str.chars() {
         if !c.is_numeric() {
-            return false;
+            result = false;
         }
     }
-    return true;
+
+    if str.parse::<f64>().is_ok() {
+        result = true;
+    }
+
+    return result;
 }
 
 struct Interpreter {
@@ -45,7 +53,7 @@ impl Interpreter {
 
         while let Some(word) = iter.next() {
             if is_string_numeric(word.to_string()) {
-                self.stack.push(word.parse::<i32>().unwrap());
+                self.stack.push(word.parse::<f64>().unwrap());
             }
 
             match word {
@@ -71,10 +79,10 @@ impl Interpreter {
                 }
                 &"putstr" => loop {
                     let pop = self.stack.pop();
-                    if pop == 0 {
+                    if pop == 0.0 {
                         break;
                     } else {
-                        print!("{}", char::from_u32(pop.try_into().unwrap()).unwrap())
+                        print!("{}", char::from_u32(pop as u32).unwrap());
                     }
                 },
                 &"macro" => {
@@ -100,20 +108,32 @@ impl Interpreter {
                 &"eq" => {
                     // Pop items from stack
                     let b = self.stack.pop() == self.stack.pop();
-                    let res = if b == true { 1 } else { 0 };
+                    let res = if b == true { 1.0 } else { 0.0 };
                     self.stack.push(res);
                 }
 
                 &"noteq" => {
                     // Pop items from stack
                     let b = self.stack.pop() != self.stack.pop();
-                    let res = if b == true { 1 } else { 0 };
+                    let res = if b == true { 1.0 } else { 0.0 };
+                    self.stack.push(res);
+                }
+
+                &"bigger" => {
+                    let b = self.stack.pop() < self.stack.pop();
+                    let res = if b == true { 1.0 } else { 0.0 };
+                    self.stack.push(res);
+                }
+
+                &"smaller" => {
+                    let b = self.stack.pop() > self.stack.pop();
+                    let res = if b == true { 1.0 } else { 0.0 };
                     self.stack.push(res);
                 }
 
                 &"then" => {
                     let stk = self.stack.pop();
-                    if stk == 1 {
+                    if stk == 1.0 {
                         // Run next code
                         self.parse(aschar[index].to_string());
                     } else {
@@ -128,7 +148,7 @@ impl Interpreter {
                     self.stack.push(item);
                     self.stack.push(item);
                 }
-                &"dup2" => {
+                &"2dup" => {
                     // Duplicate top of stack
                     let item1 = self.stack.pop();
                     let item2 = self.stack.pop();
@@ -140,11 +160,11 @@ impl Interpreter {
                 }
 
                 &"true" => {
-                    self.stack.push(1);
+                    self.stack.push(1.);
                 }
 
                 &"false" => {
-                    self.stack.push(0);
+                    self.stack.push(0.);
                 }
 
                 &"drop" => {
@@ -165,7 +185,7 @@ impl Interpreter {
 
                 &"times" => {
                     // Run code x times
-                    let x = self.stack.pop();
+                    let x = self.stack.pop() as u32;
                     let mut times_body = String::new();
 
                     index += 1;
@@ -185,18 +205,28 @@ impl Interpreter {
                 &"import" => {
                     let file_name = aschar[index + 1];
 
-                    // read file
-                    let mut file = File::open(file_name).unwrap();
-                    let mut contents = String::new();
-                    file.read_to_string(&mut contents).unwrap();
+                    index += 1;
 
-                    self.parse(contents);
+                    // Check filename for std
+                    let result = match file_name {
+                        "math" => include_str!("./std/math.jsl").to_string(),
+                        "std" => include_str!("./std/std.jsl").to_string(),
+                        _ => {
+                            // read file
+                            let mut file = File::open(file_name).unwrap();
+                            let mut contents = String::new();
+                            file.read_to_string(&mut contents).unwrap();
+
+                            contents
+                        }
+                    };
+                    self.parse(result);
 
                     iter.next();
                 }
 
                 _ => {
-                    // maybe its a function name ?
+                    // maybe its a macro name ?
                     match self
                         .functions
                         .iter()
@@ -207,6 +237,11 @@ impl Interpreter {
                         }
                         None => {}
                     };
+
+                    // Or built in function ?
+                    if builtin::is_built_in(word) {
+                        builtin::run_built_in(word, self.stack.pop());
+                    }
                 }
             }
 
@@ -216,14 +251,12 @@ impl Interpreter {
 }
 
 fn main() -> io::Result<()> {
-    let std = include_str!("./std/std.jsl");
     let args: Vec<String> = env::args().collect();
     if args.len() < 1 {
         panic!("Args is not valid");
     }
     let mut file = File::open(&args[1])?;
     let mut contents = String::new();
-    contents.push_str(&(std.to_owned() + "\n"));
     file.read_to_string(&mut contents)?;
 
     let mut i = Interpreter::new();
@@ -232,13 +265,11 @@ fn main() -> io::Result<()> {
     match args.get(2) {
         Some(arg) => {
             let size = match args.get(3) {
-                Some(num) => {
-                    num.parse::<usize>().unwrap()
-                }
-                None => 8
+                Some(num) => num.parse::<usize>().unwrap(),
+                None => 8,
             };
             if arg == "--stack" {
-                println!("{:?}", &i.stack.items[0..size]);
+                println!("\n{:?}", &i.stack.items[0..size]);
             }
         }
         None => {}
