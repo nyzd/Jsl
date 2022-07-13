@@ -8,3 +8,9 @@ macro bool
     dup 1 eq then True
     dup 0 eq then False
 end
+
+macro fullfill
+    32 times
+        255
+    done
+end
