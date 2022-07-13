@@ -63,3 +63,23 @@ this will return
 ```
 GOOD
 ```
+# Times
+`times` is a keyword like `for` loops
+
+times will pop the top of stack and do body of times x times
+
+example:
+
+```
+3 times
+  1 print
+done
+```
+
+will return:
+
+```
+1
+1
+1
+```
