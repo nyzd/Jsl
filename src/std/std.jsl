@@ -10,7 +10,7 @@ macro bool
 end
 
 macro fullfill
-    32 times
+    255 times
         255
     done
 end

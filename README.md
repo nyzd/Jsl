@@ -13,6 +13,12 @@ example:
 
 ```./target/debug/jsl source.jsl --stack```
 
+this will return 0..8 of stack if you want more or less you can specify size
+
+example:
+
+```./target/debug/jsl source.jsl --stack 32```
+
 # Macros
 ```
 macro x

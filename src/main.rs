@@ -45,7 +45,7 @@ impl Interpreter {
 
         while let Some(word) = iter.next() {
             if is_string_numeric(word.to_string()) {
-                self.stack.push(word.parse::<u8>().unwrap());
+                self.stack.push(word.parse::<i32>().unwrap());
             }
 
             match word {
@@ -74,7 +74,7 @@ impl Interpreter {
                     if pop == 0 {
                         break;
                     } else {
-                        print!("{}", pop as char)
+                        print!("{}", char::from_u32(pop.try_into().unwrap()).unwrap())
                     }
                 },
                 &"macro" => {
@@ -159,7 +159,7 @@ impl Interpreter {
 
                     // get word as a ASCII
                     for byte in content.as_bytes().iter().rev() {
-                        self.stack.push(*byte);
+                        self.stack.push((*byte).into());
                     }
                 }
 
@@ -218,8 +218,14 @@ fn main() -> io::Result<()> {
 
     match args.get(2) {
         Some(arg) => {
+            let size = match args.get(3) {
+                Some(num) => {
+                    num.parse::<usize>().unwrap()
+                }
+                None => 8
+            };
             if arg == "--stack" {
-                println!("{:?}", i.stack.items);
+                println!("{:?}", &i.stack.items[0..size]);
             }
         }
         None => {}
