@@ -182,6 +182,19 @@ impl Interpreter {
                     }
                 }
 
+                &"import" => {
+                    let file_name = aschar[index + 1];
+
+                    // read file
+                    let mut file = File::open(file_name).unwrap();
+                    let mut contents = String::new();
+                    file.read_to_string(&mut contents).unwrap();
+
+                    self.parse(contents);
+
+                    iter.next();
+                }
+
                 _ => {
                     // maybe its a function name ?
                     match self
