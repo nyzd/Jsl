@@ -1,10 +1,14 @@
 use std::process::exit;
 
-/**
- * Built in functions
- */
+pub fn is_built_in(name: &str) -> bool {
+    match name {
+        "exit" => true,
 
-pub fn run_built_int(name: &str, value: f64) {
+        _ => false
+    }
+}
+
+pub fn run_built_in(name: &str, value: f64) {
     match name  {
         "exit" => exit(value as i32),
 

@@ -205,23 +205,24 @@ impl Interpreter {
                 &"import" => {
                     let file_name = aschar[index + 1];
 
-                    // Check filename for std 
+                    index += 1;
+
+                    // Check filename for std
                     let result = match file_name {
-                        "math" => {
-                            include_str!("./std/math.jsl").to_string()
-                        }
+                        "math" => include_str!("./std/math.jsl").to_string(),
+                        "std" => include_str!("./std/std.jsl").to_string(),
                         _ => {
                             // read file
                             let mut file = File::open(file_name).unwrap();
                             let mut contents = String::new();
                             file.read_to_string(&mut contents).unwrap();
-        
+
                             contents
                         }
                     };
                     self.parse(result);
 
-                   iter.next();
+                    iter.next();
                 }
 
                 _ => {
@@ -238,7 +239,9 @@ impl Interpreter {
                     };
 
                     // Or built in function ?
-                    builtin::run_built_int(word, self.stack.pop());
+                    if builtin::is_built_in(word) {
+                        builtin::run_built_in(word, self.stack.pop());
+                    }
                 }
             }
 
@@ -248,14 +251,12 @@ impl Interpreter {
 }
 
 fn main() -> io::Result<()> {
-    let std = include_str!("./std/std.jsl");
     let args: Vec<String> = env::args().collect();
     if args.len() < 1 {
         panic!("Args is not valid");
     }
     let mut file = File::open(&args[1])?;
     let mut contents = String::new();
-    contents.push_str(&(std.to_owned() + "\n"));
     file.read_to_string(&mut contents)?;
 
     let mut i = Interpreter::new();
@@ -264,10 +265,8 @@ fn main() -> io::Result<()> {
     match args.get(2) {
         Some(arg) => {
             let size = match args.get(3) {
-                Some(num) => {
-                    num.parse::<usize>().unwrap()
-                }
-                None => 8
+                Some(num) => num.parse::<usize>().unwrap(),
+                None => 8,
             };
             if arg == "--stack" {
                 println!("\n{:?}", &i.stack.items[0..size]);

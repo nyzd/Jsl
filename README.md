@@ -112,3 +112,10 @@ macro test
   str HelloWorld putstr
 end
 ```
+
+OR import standard library
+
+```
+import std
+import math
+```
