@@ -89,3 +89,26 @@ will return:
 1
 1
 ```
+
+# Import
+example:
+
+```
+import lib.jsl
+
+test
+```
+
+will return:
+
+```
+HelloWorld
+```
+
+lib.jsl:
+
+```
+macro test
+  str HelloWorld putstr
+end
+```
