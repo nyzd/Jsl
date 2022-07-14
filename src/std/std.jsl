@@ -1,4 +1,6 @@
 macro \n 10 end
+macro stacksize 255 end
+
 macro print dup put end
 
 macro True str true end
@@ -10,7 +12,19 @@ macro bool
 end
 
 macro fullfill
-    255 times
+    stacksize times
         255
+    done
+end
+
+macro clearstack
+    stacksize times
+        drop
+    done
+end
+
+macro printstack
+    dup stacksize times
+        dup 0.0 noteq then print
     done
 end
