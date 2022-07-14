@@ -8,5 +8,9 @@ bool -> Push the stack string (true) || (false)
 
 fullfill -> Push the stack 255 , 32 times
 
+printstack -> Prints values of stack
+
+clearstack -> drop all items
+
 # Math (std)
 E -> Euler constant
