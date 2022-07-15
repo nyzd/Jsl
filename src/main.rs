@@ -74,16 +74,28 @@ impl Interpreter {
                     let push = self.stack.pop() * self.stack.pop();
                     self.stack.push(push);
                 }
+                &"swap" => {
+                    let i1 = self.stack.pop();
+                    let i2 = self.stack.pop();
+
+                    self.stack.push(i1);
+                    self.stack.push(i2);
+                }
+                &"rot" => {
+                    let i1 = self.stack.pop();
+                    let i2 = self.stack.pop();
+                    let i3 = self.stack.pop();
+
+                    self.stack.push(i1);
+                    self.stack.push(i2);
+                    self.stack.push(i3);
+                }
                 &"put" => {
                     println!("{}", self.stack.pop());
                 }
-                &"putstr" => loop {
+                &"putc" => {
                     let pop = self.stack.pop();
-                    if pop == 0.0 {
-                        break;
-                    } else {
-                        print!("{}", char::from_u32(pop as u32).unwrap());
-                    }
+                    print!("{}", char::from_u32(pop as u32).unwrap());
                 },
                 &"macro" => {
                     // find function name
@@ -175,6 +187,7 @@ impl Interpreter {
                     // Next element in word will be a string
                     let content = aschar[index + 1];
 
+                    index += 1;
                     iter.next();
 
                     // get word as a ASCII
