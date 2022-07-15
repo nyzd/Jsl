@@ -39,7 +39,7 @@ x put
 will return: `3`
 
 # Let
-`let` is like global variables
+`let` is like global variables, unlike macros let cant hold expression only holds value `float64`
 
 usage:
 
