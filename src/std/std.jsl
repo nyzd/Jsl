@@ -28,3 +28,11 @@ macro printstack
         dup 0.0 noteq then print
     done
 end
+
+macro printc dup putc end
+
+macro printstr
+    dup stacksize times
+        dup 0.0 noteq then printc
+    done
+end
