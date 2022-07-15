@@ -10,11 +10,9 @@ macro RETURN str F3 end
 macro JUMPI str 57 end
 macro REVERT str FD end
 macro ADD str 01 end
+macro ADDRESS str 30 end
 
 macro contract
-    ISZERO
-    DUP1
-    CALLVALUE
     MSTORE
     str 40 PUSH1
     str 80 PUSH1

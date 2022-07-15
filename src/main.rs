@@ -33,16 +33,24 @@ fn is_string_numeric(str: String) -> bool {
     return result;
 }
 
+#[derive(Debug)]
+struct Let {
+    name: String,
+    value: f64,
+}
+
 struct Interpreter {
     pub stack: Stack,
-    pub functions: Vec<Macro>,
+    pub macros: Vec<Macro>,
+    pub memory: Vec<Let>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {
             stack: Stack::new(),
-            functions: vec![],
+            macros: vec![],
+            memory: vec![],
         }
     }
 
@@ -113,7 +121,7 @@ impl Interpreter {
                         iter.next();
                     }
 
-                    self.functions
+                    self.macros
                         .push(Macro::new(macro_name.to_string(), macro_body));
                 }
 
@@ -238,18 +246,51 @@ impl Interpreter {
                     iter.next();
                 }
 
+                &"let" => {
+                    // Global variable
+                    // creation of a new let
+                    let let_name = aschar[index + 1];
+
+                    index += 1;
+                    iter.next();
+
+                    self.memory.push(Let { name: let_name.to_string(), value: self.stack.pop() })
+                }
+
+                &"set" => {
+                    // Global variable
+                    // creation of a new let
+                    let let_name = aschar[index + 1];
+
+                    index += 1;
+                    iter.next();
+
+                    match self.memory.iter().position(|l| l.name == let_name) {
+                        Some(l) => self.memory[l].value = self.stack.pop(),
+                        None => panic!("Let is not defined!"),
+                    }
+                }
+
+
                 _ => {
                     // maybe its a macro name ?
                     match self
-                        .functions
+                        .macros
                         .iter()
                         .position(|f| f.name == word.to_string())
                     {
                         Some(ok) => {
-                            self.parse(self.functions[ok].body.clone());
+                            self.parse(self.macros[ok].body.clone());
                         }
                         None => {}
                     };
+
+                    match self.memory.iter().position(|l| l.name == word.to_string()) {
+                        Some(ok) => {
+                            self.parse(self.memory[ok].value.to_string());
+                        }
+                        None => {}
+                    }
 
                     // Or built in function ?
                     if builtin::is_built_in(word) {
@@ -277,12 +318,16 @@ fn main() -> io::Result<()> {
 
     match args.get(2) {
         Some(arg) => {
-            let size = match args.get(3) {
-                Some(num) => num.parse::<usize>().unwrap(),
-                None => 8,
-            };
             if arg == "--stack" {
+                let size = match args.get(3) {
+                    Some(num) => num.parse::<usize>().unwrap(),
+                    None => 8,
+                };
                 println!("\n{:?}", &i.stack.items[0..size]);
+            }
+
+            if arg == "--memory" {
+                println!("\n{:?}", &i.memory);
             }
         }
         None => {}
