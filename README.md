@@ -19,6 +19,12 @@ example:
 
 ```./target/debug/jsl source.jsl --stack 32```
 
+Or if you want to debug a memory(variables) you can use `--memory` flag instead of `--stack`
+
+for example:
+
+```./target/debug/jsl source.jsl --memory```
+
 # Macros
 ```
 macro x
@@ -31,6 +37,31 @@ for example:
 x put
 ```
 will return: `3`
+
+# Let
+`let` is like global variables
+
+usage:
+
+```
+10 let x
+
+x put
+```
+
+this will return `10`
+
+You can set let value with `set` keyword
+
+for example:
+
+```
+30 set x
+
+x put
+```
+
+this will return `30`
 
 # Strings
 ```
