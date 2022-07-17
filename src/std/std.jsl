@@ -36,3 +36,7 @@ macro printstr
         dup 0.0 noteq then printc
     done
 end
+
+macro memdrop
+    mempop drop
+end

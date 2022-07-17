@@ -288,6 +288,13 @@ impl Interpreter {
                     }
                 }
 
+                &"mempop" => {
+                    match self.memory.pop() {
+                        Some(x) => self.stack.push(x.value),
+                        None => self.stack.push(0.0),
+                    };
+                }
+
                 _ => {
                     // maybe its a macro name ?
                     match self.macros.iter().position(|f| f.name == word.to_string()) {
