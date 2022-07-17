@@ -13,7 +13,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.jsl",
-				"match": "\\b(macro|end|times|done|import|let)\\b"
+				"match": "\\b(macro|end|times|done|import|let|lets|ok)\\b"
 			}]
 		}
 	},

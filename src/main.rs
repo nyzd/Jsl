@@ -104,7 +104,7 @@ impl Interpreter {
                 &"putc" => {
                     let pop = self.stack.pop();
                     print!("{}", char::from_u32(pop as u32).unwrap());
-                },
+                }
                 &"macro" => {
                     // find function name
                     let macro_name = aschar[index + 1];
@@ -254,7 +254,10 @@ impl Interpreter {
                     index += 1;
                     iter.next();
 
-                    self.memory.push(Let { name: let_name.to_string(), value: self.stack.pop() })
+                    self.memory.push(Let {
+                        name: let_name.to_string(),
+                        value: self.stack.pop(),
+                    })
                 }
 
                 &"set" => {
@@ -271,14 +274,23 @@ impl Interpreter {
                     }
                 }
 
+                &"lets" => {
+                    index += 1;
+                    iter.next();
+                    while aschar[index] != "ok" {
+                        // Create a new let in memory
+                        self.memory.push(Let {
+                            name: aschar[index].to_string(),
+                            value: self.stack.pop(),
+                        });
+                        index += 1;
+                        iter.next();
+                    }
+                }
 
                 _ => {
                     // maybe its a macro name ?
-                    match self
-                        .macros
-                        .iter()
-                        .position(|f| f.name == word.to_string())
-                    {
+                    match self.macros.iter().position(|f| f.name == word.to_string()) {
                         Some(ok) => {
                             self.parse(self.macros[ok].body.clone());
                         }

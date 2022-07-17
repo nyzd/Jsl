@@ -1,0 +1,13 @@
+macro fib
+    0 0 1 lets num1 num2 num3 ok
+
+    20 times
+        num1 num2 add set num3 
+        num2 set num1
+        num3 set num2
+
+        num3 put
+    done
+end
+
+fib
