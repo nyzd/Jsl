@@ -4,8 +4,6 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
-mod builtin;
-
 #[derive(Debug)]
 struct Macro {
     name: String,
@@ -210,6 +208,7 @@ impl Interpreter {
                     let mut times_body = String::new();
 
                     index += 1;
+                    iter.next();
 
                     // Copy body
                     while aschar[index] != "done" {
@@ -230,8 +229,9 @@ impl Interpreter {
 
                     // Check filename for std
                     let result = match file_name {
-                        "math" => include_str!("./std/math.jsl").to_string(),
-                        "std" => include_str!("./std/std.jsl").to_string(),
+                        "math" => include_str!("../std/math.jsl").to_string(),
+                        "std" => include_str!("../std/std.jsl").to_string(),
+                        "memory" => include_str!("../std/memory.jsl").to_string(),
                         _ => {
                             // read file
                             let mut file = File::open(file_name).unwrap();
@@ -288,6 +288,18 @@ impl Interpreter {
                     }
                 }
 
+                &"mempop" => {
+                    match self.memory.pop() {
+                        Some(x) => self.stack.push(x.value),
+                        None => self.stack.push(0.0),
+                    };
+                }
+
+                &"memusage" => {
+                    // return length of created variables
+                    self.stack.push(self.memory.len() as f64);
+                }
+
                 _ => {
                     // maybe its a macro name ?
                     match self.macros.iter().position(|f| f.name == word.to_string()) {
@@ -302,11 +314,6 @@ impl Interpreter {
                             self.parse(self.memory[ok].value.to_string());
                         }
                         None => {}
-                    }
-
-                    // Or built in function ?
-                    if builtin::is_built_in(word) {
-                        builtin::run_built_in(word, self.stack.pop());
                     }
                 }
             }
