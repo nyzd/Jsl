@@ -7,3 +7,15 @@ macro memclear
         memdrop
     done
 end
+
+macro memalloc
+    times
+        let alloc
+    done
+end
+
+macro memread
+    times
+        mempop
+    done
+end
