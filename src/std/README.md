@@ -13,4 +13,13 @@ printstack -> Prints values of stack
 clearstack -> drop all items
 
 # Math (std)
+
 E -> Euler constant
+
+PI -> PI constant
+
+# Memory (std)
+
+memdrop (Remove last Variable) -> Pop top of memory + drop top of stack
+
+memclear -> clear all the variables
