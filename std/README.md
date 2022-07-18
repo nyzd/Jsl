@@ -23,3 +23,21 @@ PI -> PI constant
 memdrop (Remove last Variable) -> Pop top of memory + drop top of stack
 
 memclear -> clear all the variables
+
+memalloc -> alloc ...x elemets with y size 
+
+memread -> read x size of memory
+
+example
+
+```
+import std
+import memory
+
+str Hello
+4 memalloc
+
+4 memread printstr
+```
+
+Must return: `Hello`
