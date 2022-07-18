@@ -4,8 +4,6 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
-mod builtin;
-
 #[derive(Debug)]
 struct Macro {
     name: String,
@@ -295,6 +293,11 @@ impl Interpreter {
                     };
                 }
 
+                &"memusage" => {
+                    // return length of created variables
+                    self.stack.push(self.memory.len() as f64);
+                }
+
                 _ => {
                     // maybe its a macro name ?
                     match self.macros.iter().position(|f| f.name == word.to_string()) {
@@ -309,11 +312,6 @@ impl Interpreter {
                             self.parse(self.memory[ok].value.to_string());
                         }
                         None => {}
-                    }
-
-                    // Or built in function ?
-                    if builtin::is_built_in(word) {
-                        builtin::run_built_in(word, self.stack.pop());
                     }
                 }
             }

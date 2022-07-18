@@ -40,3 +40,9 @@ end
 macro memdrop
     mempop drop
 end
+
+macro memclear
+    memusage times
+        memdrop
+    done
+end
