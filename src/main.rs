@@ -208,6 +208,7 @@ impl Interpreter {
                     let mut times_body = String::new();
 
                     index += 1;
+                    iter.next();
 
                     // Copy body
                     while aschar[index] != "done" {
