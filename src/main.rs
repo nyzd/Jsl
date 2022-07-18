@@ -228,9 +228,9 @@ impl Interpreter {
 
                     // Check filename for std
                     let result = match file_name {
-                        "math" => include_str!("./std/math.jsl").to_string(),
-                        "std" => include_str!("./std/std.jsl").to_string(),
-                        "memory" => include_str!("./std/memory.jsl").to_string(),
+                        "math" => include_str!("../std/math.jsl").to_string(),
+                        "std" => include_str!("../std/std.jsl").to_string(),
+                        "memory" => include_str!("../std/memory.jsl").to_string(),
                         _ => {
                             // read file
                             let mut file = File::open(file_name).unwrap();
