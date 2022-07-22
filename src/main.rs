@@ -37,10 +37,35 @@ struct Let {
     value: f64,
 }
 
+#[derive(Debug)]
+struct Function {
+    name: String,
+    args: Vec<Let>,
+    body: String,
+}
+
+impl Function {
+    pub fn new(name: String, args: Vec<Let>, body: String) -> Self {
+        Self {
+            name,
+            args,
+            body
+        }
+    }
+}
+
+enum MemoryScope {
+    Function,
+    Global
+}
+
 struct Interpreter {
     pub stack: Stack,
     pub macros: Vec<Macro>,
     pub memory: Vec<Let>,
+    pub functions: Vec<Function>,
+    pub mem_scope: MemoryScope,
+    pub function_time: usize,
 }
 
 impl Interpreter {
@@ -49,6 +74,9 @@ impl Interpreter {
             stack: Stack::new(),
             macros: vec![],
             memory: vec![],
+            functions: vec![],
+            mem_scope: MemoryScope::Global,
+            function_time: 0,
         }
     }
 
@@ -115,8 +143,7 @@ impl Interpreter {
 
                     while aschar[index] != "end" {
                         macro_body.push_str(&(aschar[index].to_owned() + " "));
-                        index += 1;
-                        iter.next();
+                        Self::next(&mut iter, &mut index);
                     }
 
                     self.macros
@@ -193,8 +220,7 @@ impl Interpreter {
                     // Next element in word will be a string
                     let content = aschar[index + 1];
 
-                    index += 1;
-                    iter.next();
+                    Self::next(&mut iter, &mut index);
 
                     // get word as a ASCII
                     for byte in content.as_bytes().iter().rev() {
@@ -207,8 +233,7 @@ impl Interpreter {
                     let x = self.stack.pop() as u32;
                     let mut times_body = String::new();
 
-                    index += 1;
-                    iter.next();
+                    Self::next(&mut iter, &mut index);
 
                     // Copy body
                     while aschar[index] != "done" {
@@ -251,8 +276,7 @@ impl Interpreter {
                     // creation of a new let
                     let let_name = aschar[index + 1];
 
-                    index += 1;
-                    iter.next();
+                    Self::next(&mut iter, &mut index);
 
                     self.memory.push(Let {
                         name: let_name.to_string(),
@@ -265,8 +289,7 @@ impl Interpreter {
                     // creation of a new let
                     let let_name = aschar[index + 1];
 
-                    index += 1;
-                    iter.next();
+                    Self::next(&mut iter, &mut index);
 
                     match self.memory.iter().position(|l| l.name == let_name) {
                         Some(l) => self.memory[l].value = self.stack.pop(),
@@ -275,8 +298,7 @@ impl Interpreter {
                 }
 
                 &"lets" => {
-                    index += 1;
-                    iter.next();
+                    Self::next(&mut iter, &mut index);
                     while aschar[index] != "ok" {
                         // Create a new let in memory
                         self.memory.push(Let {
@@ -300,6 +322,30 @@ impl Interpreter {
                     self.stack.push(self.memory.len() as f64);
                 }
 
+                &"fn" => {
+                    // first find function name
+                    let fn_name = aschar[index + 1];
+                    Self::next(&mut iter, &mut index);
+
+                    let mut fn_args: Vec<Let>= vec![];
+
+                    Self::next(&mut iter, &mut index);
+                    while aschar[index] != "do" {
+                        fn_args.push(Let { name: aschar[index].to_string(), value: 0.0 });
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    let mut fn_body = String::new();
+
+                    Self::next(&mut iter, &mut index);
+                    while aschar[index] != "end" {
+                        fn_body.push_str(&(aschar[index].to_owned() + " "));
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    self.functions.push(Function::new(fn_name.to_string(), fn_args, fn_body));
+                }
+
                 _ => {
                     // maybe its a macro name ?
                     match self.macros.iter().position(|f| f.name == word.to_string()) {
@@ -309,9 +355,38 @@ impl Interpreter {
                         None => {}
                     };
 
-                    match self.memory.iter().position(|l| l.name == word.to_string()) {
+                    match self.mem_scope {
+                        MemoryScope::Global => {
+                            match self.memory.iter().position(|l| l.name == word.to_string()) {
+                                Some(ok) => {
+                                    self.stack.push(self.memory[ok].value);
+                                }
+                                None => {}
+                            }
+                        }
+
+                        MemoryScope::Function => {
+                            let args = &self.functions[self.function_time].args;
+                            match args.iter().position(|l| l.name == word.to_string()) {
+                                Some(ok) => {
+                                    self.stack.push(args[ok].value);
+                                }
+
+                                None => {}
+                            }
+                        }
+                    }
+
+                    match self.functions.iter().position(|f| f.name == word.to_string()) {
                         Some(ok) => {
-                            self.parse(self.memory[ok].value.to_string());
+                            self.function_time = ok;
+                            let mut args = self.functions[ok].args.iter_mut();
+                            while let Some(arg) = args.next() {
+                                arg.value = self.stack.pop();
+                            }
+                            self.mem_scope = MemoryScope::Function;
+                            self.parse(self.functions[ok].body.to_string());
+                            self.mem_scope = MemoryScope::Global;
                         }
                         None => {}
                     }
@@ -320,6 +395,15 @@ impl Interpreter {
 
             index += 1;
         }
+
+    }
+
+    fn next<T>(iter: &mut T, index: &mut usize)
+    where 
+        T: Iterator
+    {
+        *index += 1;
+        iter.next();
     }
 }
 
