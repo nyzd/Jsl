@@ -78,7 +78,9 @@ z = 1
 
 # Strings
 ```
-str HelloWorld putstr
+import std
+
+str HelloWorld printstr
 ```
 result will be
 ```
@@ -106,7 +108,9 @@ will return `1`
 `then` runs function if the top of stack is true
 example:
 ```
-macro x str GOOD putstr end
+import std
+
+macro x str GOOD printstr end
 1 1 eq then x
 ```
 this will return 
