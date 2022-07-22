@@ -44,7 +44,7 @@ output:
 HelloWorld
 ```
 
-also you can specify a argumants of a function after name of function for example:
+also you can specify a arguments of a function after name of function for example:
 
 ```
 fn callme x y z do
