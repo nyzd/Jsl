@@ -40,23 +40,19 @@ struct Let {
 #[derive(Debug)]
 struct Function {
     name: String,
-    args: Vec<Let>,
+    memory: Vec<Let>,
     body: String,
 }
 
 impl Function {
-    pub fn new(name: String, args: Vec<Let>, body: String) -> Self {
-        Self {
-            name,
-            args,
-            body
-        }
+    pub fn new(name: String, memory: Vec<Let>, body: String) -> Self {
+        Self { name, memory, body }
     }
 }
 
 enum MemoryScope {
     Function,
-    Global
+    Global,
 }
 
 struct Interpreter {
@@ -278,10 +274,18 @@ impl Interpreter {
 
                     Self::next(&mut iter, &mut index);
 
-                    self.memory.push(Let {
-                        name: let_name.to_string(),
-                        value: self.stack.pop(),
-                    })
+                    match self.mem_scope {
+                        MemoryScope::Function => {
+                            self.functions[self.function_time].memory.push(Let {
+                                name: let_name.to_string(),
+                                value: self.stack.pop(),
+                            })
+                        }
+                        MemoryScope::Global => self.memory.push(Let {
+                            name: let_name.to_string(),
+                            value: self.stack.pop(),
+                        }),
+                    }
                 }
 
                 &"set" => {
@@ -291,22 +295,49 @@ impl Interpreter {
 
                     Self::next(&mut iter, &mut index);
 
-                    match self.memory.iter().position(|l| l.name == let_name) {
-                        Some(l) => self.memory[l].value = self.stack.pop(),
-                        None => panic!("Let is not defined!"),
+                    match self.mem_scope {
+                        MemoryScope::Function => {
+                            let function = &mut self.functions[self.function_time];
+
+                            match function.memory.iter().position(|l| l.name == let_name) {
+                                Some(l) => function.memory[l].value = self.stack.pop(),
+                                None => panic!("Let is not defined!"),
+                            }
+                        }
+                        MemoryScope::Global => {
+                            match self.memory.iter().position(|l| l.name == let_name) {
+                                Some(l) => self.memory[l].value = self.stack.pop(),
+                                None => panic!("Let is not defined!"),
+                            }
+                        }
                     }
                 }
 
                 &"lets" => {
                     Self::next(&mut iter, &mut index);
-                    while aschar[index] != "ok" {
-                        // Create a new let in memory
-                        self.memory.push(Let {
-                            name: aschar[index].to_string(),
-                            value: self.stack.pop(),
-                        });
-                        index += 1;
-                        iter.next();
+                    match self.mem_scope {
+                        MemoryScope::Function => {
+                            while aschar[index] != "ok" {
+                                // Create a new let in memory
+                                self.functions[self.function_time].memory.push(Let {
+                                    name: aschar[index].to_string(),
+                                    value: self.stack.pop(),
+                                });
+                                index += 1;
+                                iter.next();
+                            }
+                        }
+                        MemoryScope::Global => {
+                            while aschar[index] != "ok" {
+                                // Create a new let in memory
+                                self.memory.push(Let {
+                                    name: aschar[index].to_string(),
+                                    value: self.stack.pop(),
+                                });
+                                index += 1;
+                                iter.next();
+                            }
+                        }
                     }
                 }
 
@@ -327,11 +358,14 @@ impl Interpreter {
                     let fn_name = aschar[index + 1];
                     Self::next(&mut iter, &mut index);
 
-                    let mut fn_args: Vec<Let>= vec![];
+                    let mut fn_args: Vec<Let> = vec![];
 
                     Self::next(&mut iter, &mut index);
                     while aschar[index] != "do" {
-                        fn_args.push(Let { name: aschar[index].to_string(), value: 0.0 });
+                        fn_args.push(Let {
+                            name: aschar[index].to_string(),
+                            value: 0.0,
+                        });
                         Self::next(&mut iter, &mut index);
                     }
 
@@ -343,7 +377,8 @@ impl Interpreter {
                         Self::next(&mut iter, &mut index);
                     }
 
-                    self.functions.push(Function::new(fn_name.to_string(), fn_args, fn_body));
+                    self.functions
+                        .push(Function::new(fn_name.to_string(), fn_args, fn_body));
                 }
 
                 _ => {
@@ -366,7 +401,7 @@ impl Interpreter {
                         }
 
                         MemoryScope::Function => {
-                            let args = &self.functions[self.function_time].args;
+                            let args = &self.functions[self.function_time].memory;
                             match args.iter().position(|l| l.name == word.to_string()) {
                                 Some(ok) => {
                                     self.stack.push(args[ok].value);
@@ -377,10 +412,14 @@ impl Interpreter {
                         }
                     }
 
-                    match self.functions.iter().position(|f| f.name == word.to_string()) {
+                    match self
+                        .functions
+                        .iter()
+                        .position(|f| f.name == word.to_string())
+                    {
                         Some(ok) => {
                             self.function_time = ok;
-                            let mut args = self.functions[ok].args.iter_mut();
+                            let mut args = self.functions[ok].memory.iter_mut();
                             while let Some(arg) = args.next() {
                                 arg.value = self.stack.pop();
                             }
@@ -395,12 +434,11 @@ impl Interpreter {
 
             index += 1;
         }
-
     }
 
     fn next<T>(iter: &mut T, index: &mut usize)
-    where 
-        T: Iterator
+    where
+        T: Iterator,
     {
         *index += 1;
         iter.next();
