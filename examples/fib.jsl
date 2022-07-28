@@ -1,7 +1,7 @@
-macro fib
+fn fib n do
     0 0 1 lets num1 num2 num3 ok
 
-    20 times
+    n times
         num1 num2 add set num3 
         num2 set num1
         num3 set num2
@@ -10,4 +10,4 @@ macro fib
     done
 end
 
-fib
+100 fib

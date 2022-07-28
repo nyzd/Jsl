@@ -25,6 +25,45 @@ for example:
 
 ```./target/debug/jsl source.jsl --memory```
 
+# Functions
+Functions can defined with `fn` keyword, for example
+
+```
+import std
+
+fn callme do
+  str Helloworld printstr
+end
+
+callme
+```
+
+output:
+
+```
+HelloWorld
+```
+
+also you can specify a arguments of a function after name of function for example:
+
+```
+fn callme x y z do
+  x put
+  y put
+  z put
+end
+
+1 2 3 callme
+```
+
+output:
+
+```
+3
+2
+1
+```
+
 # Macros
 ```
 macro x
