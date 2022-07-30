@@ -1,8 +1,56 @@
 use stack::Stack;
 use std::env;
-use std::fs::File;
+use std::fs::{remove_file, File};
 use std::io;
 use std::io::prelude::*;
+use std::path::PathBuf;
+use std::process::Command;
+use std::str::FromStr;
+
+/// Assembly
+struct Asm {
+    asm_file: PathBuf,
+    o_file: PathBuf,
+    source: String,
+}
+
+impl Asm {
+    pub fn new(source: String, asm_file: PathBuf, o_file: PathBuf) -> Self {
+        Self {
+            source,
+            asm_file,
+            o_file,
+        }
+    }
+
+    fn run(&self) -> Vec<u8> {
+        // Create the asm file
+        let mut file = File::create(&self.asm_file).unwrap();
+        file.write_all(self.source.as_bytes()).unwrap();
+
+        // Now build the assembly
+        Command::new("gcc")
+            .args(["-c", self.asm_file.to_str().unwrap()])
+            .output()
+            .expect("Cant Assemble");
+
+        Command::new("ld")
+            .args([self.o_file.to_str().unwrap()])
+            .output()
+            .expect("Cant link");
+
+        return Command::new("./a.out")
+            .output()
+            .expect("Cant run program")
+            .stdout;
+    }
+
+    fn clean(&self) -> () {
+        remove_file(&self.asm_file).unwrap();
+        remove_file(&self.o_file).unwrap();
+        remove_file("./a.out").unwrap();
+    }
+}
 
 #[derive(Debug)]
 struct Macro {
@@ -379,6 +427,32 @@ impl Interpreter {
 
                     self.functions
                         .push(Function::new(fn_name.to_string(), fn_args, fn_body));
+                }
+
+                &"asm" => {
+                    let mut asm_source = String::new();
+                    Self::next(&mut iter, &mut index);
+
+                    while aschar[index] != "run" {
+                        if aschar[index] == "~" {
+                            asm_source.push('\n');
+                            Self::next(&mut iter, &mut index);
+                        }
+                        asm_source.push_str(&(aschar[index].to_owned() + " "));
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    let asm = Asm::new(
+                        asm_source,
+                        PathBuf::from_str("./asm.s").unwrap(),
+                        PathBuf::from_str("./asm.o").unwrap(),
+                    );
+
+                    for i in asm.run().iter().rev() {
+                        self.stack.push(*i as f64);
+                    }
+
+                    // asm.clean();
                 }
 
                 _ => {
