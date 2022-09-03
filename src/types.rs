@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::{interpreter::StackType, token::Token};
 
 #[derive(Debug, Clone)]
 pub struct Macro {
@@ -15,13 +15,7 @@ impl Macro {
 #[derive(Debug, Clone)]
 pub struct Let {
     pub name: String,
-    pub value: f64,
-}
-
-impl Let {
-    pub fn set_value(&mut self, new_value: f64) -> () {
-        self.value = new_value;
-    }
+    pub value: StackType,
 }
 
 #[derive(Debug, Clone)]

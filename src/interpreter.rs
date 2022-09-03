@@ -1,13 +1,83 @@
 use crate::{token::Token, types::*};
-use stack::Stack;
+use std::ops::{Add, Div, Mul, Sub};
 
 pub enum MemoryScope {
     Function,
     Global,
 }
 
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub enum StackType {
+    Float(f64),
+    String(String),
+    Array(Vec<StackType>),
+}
+
+impl StackType {
+    fn print(self) {
+        match self {
+            Self::Float(f) => println!("{}", f),
+            Self::String(str) => println!("{}", str),
+            Self::Array(vec) => println!("{:?}", vec),
+        }
+    }
+}
+
+impl Add for StackType {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => match rhs {
+                Self::Float(rf) => Self::Float(f + rf),
+                _ => panic!("Cant Div"),
+            },
+            _ => panic!("Cant Div"),
+        }
+    }
+}
+
+impl Sub for StackType {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => match rhs {
+                Self::Float(rf) => Self::Float(f - rf),
+                _ => panic!("Cant Div"),
+            },
+            _ => panic!("Cant Div"),
+        }
+    }
+}
+
+impl Div for StackType {
+    type Output = Self;
+    fn div(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => match rhs {
+                Self::Float(rf) => Self::Float(f / rf),
+                _ => panic!("Cant Div"),
+            },
+
+            _ => panic!("Cant Div"),
+        }
+    }
+}
+
+impl Mul for StackType {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => match rhs {
+                Self::Float(rf) => Self::Float(f * rf),
+                _ => panic!("Cant Div"),
+            },
+            _ => panic!("Cant Div"),
+        }
+    }
+}
+
 pub struct Interpreter {
-    pub stack: Stack,
+    pub stack: Vec<StackType>,
     pub macros: Vec<Macro>,
     pub memory: Vec<Let>,
     pub functions: Vec<Function>,
@@ -18,7 +88,7 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            stack: Stack::new(),
+            stack: Vec::with_capacity(255),
             macros: vec![],
             memory: vec![],
             functions: vec![],
@@ -33,80 +103,73 @@ impl Interpreter {
         while let Some(token) = iter.next() {
             match token {
                 Token::Number(n) => {
-                    self.stack.push(n.to_owned());
+                    self.stack.push(StackType::Float(n.to_owned()));
                 }
                 Token::Add => {
-                    let push = self.stack.pop() + self.stack.pop();
+                    let push = self.stack.pop().unwrap() + self.stack.pop().unwrap();
                     self.stack.push(push);
                 }
                 Token::Minus => {
-                    let push = self.stack.pop() - self.stack.pop();
+                    let push = self.stack.pop().unwrap() - self.stack.pop().unwrap();
                     self.stack.push(push);
                 }
                 Token::Div => {
-                    let push = self.stack.pop() / self.stack.pop();
+                    let push = self.stack.pop().unwrap() / self.stack.pop().unwrap();
                     self.stack.push(push);
                 }
                 Token::Mul => {
-                    let push = self.stack.pop() * self.stack.pop();
+                    let push = self.stack.pop().unwrap() * self.stack.pop().unwrap();
                     self.stack.push(push);
                 }
                 Token::Swap => {
-                    let i1 = self.stack.pop();
-                    let i2 = self.stack.pop();
+                    let i1 = self.stack.pop().unwrap();
+                    let i2 = self.stack.pop().unwrap();
 
                     self.stack.push(i1);
                     self.stack.push(i2);
                 }
                 Token::Rot => {
-                    let i1 = self.stack.pop();
-                    let i2 = self.stack.pop();
-                    let i3 = self.stack.pop();
+                    let i1 = self.stack.pop().unwrap();
+                    let i2 = self.stack.pop().unwrap();
+                    let i3 = self.stack.pop().unwrap();
 
                     self.stack.push(i1);
                     self.stack.push(i2);
                     self.stack.push(i3);
                 }
-                Token::Put => {
-                    println!("{}", self.stack.pop());
-                }
-                Token::Putc => {
-                    let pop = self.stack.pop();
-                    print!("{}", char::from_u32(pop as u32).unwrap());
-                }
+                Token::Put => self.stack.pop().unwrap().print(),
                 Token::Macro(m) => {
                     self.macros.push(m.to_owned());
                 }
-
                 Token::Eq => {
                     // Pop items from stack
-                    let b = self.stack.pop() == self.stack.pop();
+                    let b = self.stack.pop().unwrap() == self.stack.pop().unwrap();
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Float(res));
                 }
 
                 Token::Noteq => {
                     // Pop items from stack
                     let b = self.stack.pop() != self.stack.pop();
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Float(res));
                 }
 
                 Token::Bigger => {
                     let b = self.stack.pop() < self.stack.pop();
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Float(res));
                 }
 
                 Token::Smaller => {
                     let b = self.stack.pop() > self.stack.pop();
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Float(res));
                 }
 
                 Token::Then => {
-                    let stk = self.stack.pop();
-                    if stk == 1.0 {
+                    let stk = self.stack.pop().unwrap();
+                    if stk == StackType::Float(1.0) {
                         // Run next code
                         let f: Vec<Token> = vec![tokens.get(index).unwrap().to_owned()];
                         self.parse(f);
@@ -117,17 +180,17 @@ impl Interpreter {
 
                 Token::Dup => {
                     // Duplicate top of stack
-                    let item = self.stack.pop();
+                    let item = self.stack.pop().unwrap();
 
-                    self.stack.push(item);
+                    self.stack.push(item.clone());
                     self.stack.push(item);
                 }
                 Token::True => {
-                    self.stack.push(1.);
+                    self.stack.push(StackType::Float(1.));
                 }
 
                 Token::False => {
-                    self.stack.push(0.);
+                    self.stack.push(StackType::Float(0.));
                 }
 
                 Token::Drop => {
@@ -135,17 +198,20 @@ impl Interpreter {
                 }
 
                 Token::Str(content) => {
-                    // get word as a ASCII
-                    for byte in content.as_bytes().iter().rev() {
-                        self.stack.push((*byte).into());
-                    }
+                    self.stack.push(StackType::String(content.to_owned()));
                 }
 
                 Token::Times(tks) => {
                     // Run code x times
-                    let x = self.stack.pop() as u32;
-                    for _i in 0..x {
-                        self.parse(tks.to_vec());
+                    let x = self.stack.pop().unwrap();
+                    match x {
+                        StackType::Float(x) => {
+                            for _i in 0..x as u32 {
+                                self.parse(tks.to_vec());
+                            }
+                        }
+
+                        _ => panic!("Cant iter over Not float type"),
                     }
                 }
 
@@ -158,12 +224,12 @@ impl Interpreter {
                         let f = &mut self.functions[self.function_time];
                         f.memory.push(Let {
                             name: name.to_string(),
-                            value: self.stack.pop(),
+                            value: self.stack.pop().unwrap(),
                         })
                     }
                     MemoryScope::Global => self.memory.push(Let {
                         name: name.to_string(),
-                        value: self.stack.pop(),
+                        value: self.stack.pop().unwrap(),
                     }),
                 },
 
@@ -172,16 +238,13 @@ impl Interpreter {
                         let function = &mut self.functions[self.function_time];
 
                         match function.memory.iter().position(|l| &l.name == let_name) {
-                            Some(l) => {
-                                let f = &mut self.functions[self.function_time];
-                                f.memory[l].set_value(self.stack.pop());
-                            }
+                            Some(l) => function.memory[l].value = self.stack.pop().unwrap(),
                             None => panic!("Let is not defined!"),
                         }
                     }
                     MemoryScope::Global => {
                         match self.memory.iter().position(|l| &l.name == let_name) {
-                            Some(l) => self.memory[l].value = self.stack.pop(),
+                            Some(l) => self.memory[l].value = self.stack.pop().unwrap(),
                             None => panic!("Let is not defined!"),
                         }
                     }
@@ -190,13 +253,13 @@ impl Interpreter {
                 Token::Mempop => {
                     match self.memory.pop() {
                         Some(x) => self.stack.push(x.value),
-                        None => self.stack.push(0.0),
+                        None => {}
                     };
                 }
 
                 Token::Memusage => {
                     // return length of created variables
-                    self.stack.push(self.memory.len() as f64);
+                    self.stack.push(StackType::Float(self.memory.len() as f64));
                 }
 
                 Token::Function(func) => {
@@ -209,7 +272,7 @@ impl Interpreter {
                         let f = &mut self.functions[self.function_time];
                         let mut args = f.memory.iter_mut();
                         while let Some(arg) = args.next() {
-                            arg.value = self.stack.pop();
+                            arg.value = self.stack.pop().unwrap();
                         }
                         self.mem_scope = MemoryScope::Function;
                         self.parse(self.functions.get(ok).unwrap().to_owned().body);
@@ -218,15 +281,35 @@ impl Interpreter {
                     None => {}
                 },
 
+                Token::Array(tokens) => {
+                    let mut parser = Self::new();
+                    parser.parse(tokens.to_owned());
+
+                    self.stack.push(StackType::Array(parser.stack))
+                }
+
+                Token::PushArray => {
+                    let value = self.stack.pop().unwrap();
+                    let array = self.stack.pop().unwrap();
+
+                    match array {
+                        StackType::Array(a) => {
+                            let mut new_array = a.clone();
+                            new_array.push(value);
+                            self.stack.push(StackType::Array(new_array));
+                        }
+                        _ => panic!("You cant push Value to not array value"),
+                    }
+                }
+
                 Token::Ident(name) => {
-                    let mut error = false;
                     match self.mem_scope {
                         MemoryScope::Global => {
                             match self.memory.iter().position(|l| &l.name == name) {
                                 Some(ok) => {
-                                    self.stack.push(self.memory[ok].value);
+                                    self.stack.push(self.memory[ok].value.clone());
                                 }
-                                None => error = true,
+                                None => {}
                             }
                         }
 
@@ -234,26 +317,24 @@ impl Interpreter {
                             let args = &self.functions[self.function_time].memory;
                             match args.iter().position(|l| &l.name == name) {
                                 Some(ok) => {
-                                    error = false;
-                                    self.stack.push(args[ok].value);
+                                    self.stack.push(args[ok].value.clone());
                                 }
 
-                                None => error = true,
+                                None => {}
                             }
                         }
                     }
 
-                    match self.macros.iter().position(|f| &f.name == name) {
+                    match self.macros.iter().position(|m| &m.name == name) {
                         Some(ok) => {
-                            error = false;
                             self.parse(self.macros[ok].body.clone());
                         }
-                        None => error = true,
+                        None => {}
                     };
 
-                    if error {
-                        panic!("Token is not defined : {:?}", token);
-                    }
+                    // if error {
+                    //     panic!("Token is not defined : {:?}", token);
+                    // }
                 }
             }
 

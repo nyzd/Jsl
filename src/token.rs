@@ -10,7 +10,6 @@ pub enum Token {
     Swap,
     Rot,
     Put,
-    Putc,
     Eq,
     Macro(Macro),
     Noteq,
@@ -31,4 +30,6 @@ pub enum Token {
     Function(Function),
     Call(String),
     Ident(String),
+    Array(Vec<Token>),
+    PushArray,
 }

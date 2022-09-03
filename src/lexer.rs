@@ -1,4 +1,4 @@
-use crate::{token::Token, types::*};
+use crate::{interpreter::StackType, token::Token, types::*};
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -42,7 +42,6 @@ impl Lexer {
                 &"swap" => result.push(Token::Swap),
                 &"rot" => result.push(Token::Rot),
                 &"put" => result.push(Token::Put),
-                &"putc" => result.push(Token::Putc),
                 &"macro" => {
                     // find function name
                     let macro_name = aschar[index + 1];
@@ -113,7 +112,7 @@ impl Lexer {
                 &"import" => {
                     let file_name = aschar[index + 1];
 
-                    index += 1;
+                    Self::next(&mut iter, &mut index);
 
                     // Check filename for std
                     let file_data = match file_name {
@@ -156,7 +155,7 @@ impl Lexer {
                     while aschar[index] != "do" {
                         fn_args.push(Let {
                             name: aschar[index].to_string(),
-                            value: 0.0,
+                            value: StackType::Float(0.0),
                         });
                         Self::next(&mut iter, &mut index);
                     }
@@ -181,6 +180,24 @@ impl Lexer {
                     Self::next(&mut iter, &mut index);
                     result.push(Token::Call(name.to_string()));
                 }
+
+                &"mempop" => result.push(Token::Mempop),
+                &"memusage" => result.push(Token::Memusage),
+
+                // Array
+                &"[" => {
+                    let mut array_body = String::new();
+                    Self::next(&mut iter, &mut index);
+
+                    while aschar[index] != "]" {
+                        array_body.push_str(&(aschar[index].to_owned() + " "));
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    result.push(Token::Array(Self::new(array_body).lex()));
+                }
+
+                &"pushArray" => result.push(Token::PushArray),
 
                 _ => {
                     if is_string_numeric(word.to_string()) {
