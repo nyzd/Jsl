@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "jsl"
 version = "0.1.0"
+dependencies = [
+ "rstd",
+]
+
+[[package]]
+name = "rstd"
+version = "0.1.0"
