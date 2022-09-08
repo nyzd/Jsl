@@ -1,5 +1,12 @@
 use crate::{token::Token, types::*};
-use std::ops::{Add, Div, Mul, Sub};
+use std::{
+    ops::{Add, Div, Mul, Rem, Sub},
+    path::Path,
+};
+
+trait Size {
+    fn get_size(&self) -> usize;
+}
 
 pub enum MemoryScope {
     Function,
@@ -11,6 +18,16 @@ pub enum StackType {
     Float(f64),
     String(String),
     Array(Vec<StackType>),
+}
+
+impl Size for StackType {
+    fn get_size(&self) -> usize {
+        match self {
+            StackType::Float(f) => *f as usize,
+            StackType::Array(vec) => vec.len(),
+            StackType::String(string) => string.len(),
+        }
+    }
 }
 
 impl StackType {
@@ -76,6 +93,19 @@ impl Mul for StackType {
     }
 }
 
+impl Rem for StackType {
+    type Output = Self;
+    fn rem(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => match rhs {
+                Self::Float(rf) => Self::Float(f % rf),
+                _ => panic!("Cant Div"),
+            },
+            _ => panic!("Cant Div"),
+        }
+    }
+}
+
 pub struct Interpreter {
     pub stack: Vec<StackType>,
     pub macros: Vec<Macro>,
@@ -99,7 +129,7 @@ impl Interpreter {
 
     pub fn parse(&mut self, tokens: Vec<Token>) {
         let mut iter = tokens.iter();
-        let mut index = 0;
+
         while let Some(token) = iter.next() {
             match token {
                 Token::Number(n) => {
@@ -119,6 +149,10 @@ impl Interpreter {
                 }
                 Token::Mul => {
                     let push = self.stack.pop().unwrap() * self.stack.pop().unwrap();
+                    self.stack.push(push);
+                }
+                Token::Mod => {
+                    let push = self.stack.pop().unwrap() % self.stack.pop().unwrap();
                     self.stack.push(push);
                 }
                 Token::Swap => {
@@ -167,12 +201,12 @@ impl Interpreter {
                     self.stack.push(StackType::Float(res));
                 }
 
-                Token::Then => {
+                // TODO: Dont support functions.
+                Token::Then(tokens) => {
                     let stk = self.stack.pop().unwrap();
                     if stk == StackType::Float(1.0) {
                         // Run next code
-                        let f: Vec<Token> = vec![tokens.get(index).unwrap().to_owned()];
-                        self.parse(f);
+                        self.parse(tokens.to_owned());
                     } else {
                         iter.next();
                     }
@@ -288,20 +322,6 @@ impl Interpreter {
                     self.stack.push(StackType::Array(parser.stack))
                 }
 
-                Token::PushArray => {
-                    let value = self.stack.pop().unwrap();
-                    let array = self.stack.pop().unwrap();
-
-                    match array {
-                        StackType::Array(a) => {
-                            let mut new_array = a.clone();
-                            new_array.push(value);
-                            self.stack.push(StackType::Array(new_array));
-                        }
-                        _ => panic!("You cant push Value to not array value"),
-                    }
-                }
-
                 Token::Ident(name) => {
                     match self.mem_scope {
                         MemoryScope::Global => {
@@ -332,13 +352,85 @@ impl Interpreter {
                         None => {}
                     };
 
-                    // if error {
-                    //     panic!("Token is not defined : {:?}", token);
-                    // }
+                    self.match_rstd(name);
                 }
             }
+        }
+    }
 
-            index += 1;
+    fn match_rstd(&mut self, name: &str) {
+        // rstd functions
+        match name {
+            "fs::readFile" => {
+                let file_path = self.stack.pop().unwrap();
+                match file_path {
+                    StackType::String(str) => {
+                        let content = rstd::fs::read_file(Path::new(&str).to_path_buf()).unwrap();
+                        self.stack.push(StackType::String(content));
+                    }
+                    _ => panic!("Cant pass not string type to readFile"),
+                }
+            }
+            "fs::createFile" => {
+                let file_content = self.stack.pop().unwrap();
+                let file_path = self.stack.pop().unwrap();
+
+                match file_path {
+                    StackType::String(path) => match file_content {
+                        StackType::String(content) => {
+                            rstd::fs::create_file(Path::new(&path).to_path_buf(), content).unwrap();
+                        }
+
+                        _ => panic!("Invalid item type"),
+                    },
+                    _ => panic!("Invalid item type"),
+                };
+            }
+            "length" => {
+                let item = self.stack.pop().unwrap().get_size() as f64;
+                self.stack.push(StackType::Float(item));
+            }
+            "array::nth" => {
+                let nth = self.stack.pop().unwrap();
+                let array = self.stack.pop().unwrap();
+
+                match array {
+                    StackType::Array(arr) => match nth {
+                        StackType::Float(f) => {
+                            self.stack.push(arr.get(f as usize).unwrap().to_owned());
+                        }
+                        _ => panic!("index must be a f64 type"),
+                    },
+
+                    _ => panic!("Cant get nth from not array type"),
+                }
+            }
+            "array::pop" => {
+                let array = self.stack.pop().unwrap();
+
+                match array {
+                    StackType::Array(mut arr) => {
+                        self.stack.push(arr.pop().unwrap());
+                        self.stack.push(StackType::Array(arr));
+                    }
+
+                    _ => panic!("Cant get pop from not array type"),
+                }
+            }
+            "array::push" => {
+                let value = self.stack.pop().unwrap();
+                let array = self.stack.pop().unwrap();
+
+                match array {
+                    StackType::Array(a) => {
+                        let mut new_array = a.clone();
+                        new_array.push(value);
+                        self.stack.push(StackType::Array(new_array));
+                    }
+                    _ => panic!("You cant push Value to not array value"),
+                }
+            }
+            _ => {}
         }
     }
 }

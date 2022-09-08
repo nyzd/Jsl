@@ -41,6 +41,7 @@ impl Lexer {
                 &"mul" => result.push(Token::Mul),
                 &"swap" => result.push(Token::Swap),
                 &"rot" => result.push(Token::Rot),
+                &"mod" => result.push(Token::Mod),
                 &"put" => result.push(Token::Put),
                 &"macro" => {
                     // find function name
@@ -76,7 +77,12 @@ impl Lexer {
 
                 &"smaller" => result.push(Token::Smaller),
 
-                &"then" => result.push(Token::Then),
+                &"then" => {
+                    let next_token = aschar[index + 1];
+                    Self::next(&mut iter, &mut index);
+
+                    result.push(Token::Then(Self::new(next_token.to_string()).lex()))
+                }
 
                 &"dup" => result.push(Token::Dup),
 
@@ -196,8 +202,6 @@ impl Lexer {
 
                     result.push(Token::Array(Self::new(array_body).lex()));
                 }
-
-                &"pushArray" => result.push(Token::PushArray),
 
                 _ => {
                     if is_string_numeric(word.to_string()) {

@@ -7,6 +7,7 @@ pub enum Token {
     Minus,
     Div,
     Mul,
+    Mod,
     Swap,
     Rot,
     Put,
@@ -15,7 +16,7 @@ pub enum Token {
     Noteq,
     Bigger,
     Smaller,
-    Then,
+    Then(Vec<Token>),
     True,
     False,
     Dup,
@@ -31,5 +32,4 @@ pub enum Token {
     Call(String),
     Ident(String),
     Array(Vec<Token>),
-    PushArray,
 }
