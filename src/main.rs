@@ -1,3 +1,5 @@
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 use std::env;
 use std::fs::File;
 use std::io;
@@ -42,8 +44,38 @@ fn main() -> io::Result<()> {
                 }
             }
         }
+        None => {
+            let mut rl = Editor::<()>::new().unwrap();
+            let mut i = Interpreter::new();
+            loop {
+                let readline = rl.readline("Jsl >> ");
+                match readline {
+                    Ok(line) => {
+                        rl.add_history_entry(line.as_str());
+                        let lexer = Lexer::new(line.clone());
+                        let tokens = lexer.lex();
 
-        None => {}
+                        i.parse(tokens);
+
+                        if line != "".to_string() {
+                            println!("{:?}", i.stack)
+                        }
+                    }
+                    Err(ReadlineError::Interrupted) => {
+                        println!("CTRL-C");
+                        break;
+                    }
+                    Err(ReadlineError::Eof) => {
+                        println!("CTRL-D");
+                        break;
+                    }
+                    Err(err) => {
+                        println!("Error: {:?}", err);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     Ok(())

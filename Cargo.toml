@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rstd = {path="./rstd"}
+rustyline = "10.0.0"
