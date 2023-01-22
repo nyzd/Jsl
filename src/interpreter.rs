@@ -108,7 +108,6 @@ impl Rem for StackType {
 
 pub struct Interpreter {
     pub stack: Vec<StackType>,
-    pub macros: Vec<Macro>,
     pub memory: Vec<Let>,
     pub functions: Vec<Function>,
     pub mem_scope: MemoryScope,
@@ -119,7 +118,6 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             stack: Vec::with_capacity(255),
-            macros: vec![],
             memory: vec![],
             functions: vec![],
             mem_scope: MemoryScope::Global,
@@ -172,9 +170,6 @@ impl Interpreter {
                     self.stack.push(i3);
                 }
                 Token::Put => self.stack.pop().unwrap().print(),
-                Token::Macro(m) => {
-                    self.macros.push(m.to_owned());
-                }
                 Token::Eq => {
                     // Pop items from stack
                     let b = self.stack.pop().unwrap() == self.stack.pop().unwrap();
@@ -201,12 +196,20 @@ impl Interpreter {
                     self.stack.push(StackType::Float(res));
                 }
 
-                // TODO: Dont support functions.
-                Token::Then(tokens) => {
+                Token::Then => {
                     let stk = self.stack.pop().unwrap();
+
                     if stk == StackType::Float(1.0) {
                         // Run next code
-                        self.parse(tokens.to_owned());
+                        let scope = iter.next().unwrap();
+
+                        match scope {
+                            Token::Scope(tokens) => {
+                                self.parse(tokens.to_owned());
+                            }
+
+                            _ => panic!("Expected scope after then"),
+                        }
                     } else {
                         iter.next();
                     }
@@ -235,13 +238,20 @@ impl Interpreter {
                     self.stack.push(StackType::String(content.to_owned()));
                 }
 
-                Token::Times(tks) => {
+                Token::Times => {
                     // Run code x times
                     let x = self.stack.pop().unwrap();
                     match x {
                         StackType::Float(x) => {
+                            let next_token = iter.next().unwrap();
+
                             for _i in 0..x as u32 {
-                                self.parse(tks.to_vec());
+                                match next_token {
+                                    Token::Scope(tokens) => {
+                                        self.parse(tokens.to_vec());
+                                    }
+                                    _ => panic!("Expected scope after times"),
+                                }
                             }
                         }
 
@@ -297,7 +307,16 @@ impl Interpreter {
                 }
 
                 Token::Function(func) => {
-                    self.functions.push(func.to_owned());
+                    let new_token = iter.next().unwrap();
+                    let mut function = func.clone();
+                    match new_token {
+                        Token::Scope(tokens) => {
+                            function.set_scope(tokens.to_vec());
+                        }
+
+                        _ => panic!("Expected scope after function args"),
+                    }
+                    self.functions.push(function);
                 }
 
                 Token::Call(name) => match self.functions.iter().position(|f| &f.name == name) {
@@ -309,7 +328,7 @@ impl Interpreter {
                             arg.value = self.stack.pop().unwrap();
                         }
                         self.mem_scope = MemoryScope::Function;
-                        self.parse(self.functions.get(ok).unwrap().to_owned().body);
+                        self.parse(self.functions.get(ok).unwrap().to_owned().scope);
                         self.mem_scope = MemoryScope::Global;
                     }
                     None => {}
@@ -320,6 +339,10 @@ impl Interpreter {
                     parser.parse(tokens.to_owned());
 
                     self.stack.push(StackType::Array(parser.stack))
+                }
+
+                Token::Scope(tokens) => {
+                    self.parse(tokens.to_owned());
                 }
 
                 Token::Ident(name) => {
@@ -344,14 +367,6 @@ impl Interpreter {
                             }
                         }
                     }
-
-                    match self.macros.iter().position(|m| &m.name == name) {
-                        Some(ok) => {
-                            self.parse(self.macros[ok].body.clone());
-                        }
-                        None => {}
-                    };
-
                     self.match_rstd(name);
                 }
             }

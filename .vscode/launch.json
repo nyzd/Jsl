@@ -27,7 +27,10 @@
                     "kind": "bin"
                 }
             },
-            "args": ["${workspaceFolder}/source.jsl"],
+            "args": [
+                "run",
+                "${workspaceFolder}/ex.jsl"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {

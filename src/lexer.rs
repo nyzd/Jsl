@@ -31,6 +31,7 @@ impl Lexer {
         let aschar: Vec<&str> = self.source.split_whitespace().collect();
         let mut iter = aschar.iter();
         let mut index = 0;
+        let mut open_scope = 0;
 
         while let Some(word) = iter.next() {
             match word {
@@ -43,26 +44,6 @@ impl Lexer {
                 &"rot" => result.push(Token::Rot),
                 &"mod" => result.push(Token::Mod),
                 &"put" => result.push(Token::Put),
-                &"macro" => {
-                    // find function name
-                    let macro_name = aschar[index + 1];
-                    let mut macro_body = String::new();
-
-                    index += 2;
-
-                    iter.next();
-                    iter.next();
-
-                    while aschar[index] != "end" {
-                        macro_body.push_str(&(aschar[index].to_owned() + " "));
-                        Self::next(&mut iter, &mut index);
-                    }
-
-                    result.push(Token::Macro(Macro::new(
-                        macro_name.to_string(),
-                        Self::new(macro_body).lex(),
-                    )));
-                }
 
                 &"eq" => {
                     result.push(Token::Eq);
@@ -77,12 +58,7 @@ impl Lexer {
 
                 &"smaller" => result.push(Token::Smaller),
 
-                &"then" => {
-                    let next_token = aschar[index + 1];
-                    Self::next(&mut iter, &mut index);
-
-                    result.push(Token::Then(Self::new(next_token.to_string()).lex()))
-                }
+                &"then" => result.push(Token::Then),
 
                 &"dup" => result.push(Token::Dup),
 
@@ -100,20 +76,7 @@ impl Lexer {
                     result.push(Token::Str(content.to_string()))
                 }
 
-                &"times" => {
-                    let mut times_body = String::new();
-
-                    Self::next(&mut iter, &mut index);
-
-                    // Copy body
-                    while aschar[index] != "done" {
-                        times_body.push_str(&(aschar[index].to_owned() + " "));
-                        index += 1;
-                        iter.next();
-                    }
-
-                    result.push(Token::Times(Self::new(times_body).lex()))
-                }
+                &"times" => result.push(Token::Times),
 
                 &"import" => {
                     let file_name = aschar[index + 1];
@@ -158,7 +121,7 @@ impl Lexer {
                     let mut fn_args: Vec<Let> = vec![];
 
                     Self::next(&mut iter, &mut index);
-                    while aschar[index] != "do" {
+                    while aschar[index] != "->" {
                         fn_args.push(Let {
                             name: aschar[index].to_string(),
                             value: StackType::Float(0.0),
@@ -166,19 +129,7 @@ impl Lexer {
                         Self::next(&mut iter, &mut index);
                     }
 
-                    let mut fn_body = String::new();
-
-                    Self::next(&mut iter, &mut index);
-                    while aschar[index] != "end" {
-                        fn_body.push_str(&(aschar[index].to_owned() + " "));
-                        Self::next(&mut iter, &mut index);
-                    }
-
-                    result.push(Token::Function(Function::new(
-                        fn_name.to_string(),
-                        fn_args,
-                        Self::new(fn_body).lex(),
-                    )))
+                    result.push(Token::Function(Function::new(fn_name.to_string(), fn_args)));
                 }
 
                 &"call" => {
@@ -201,6 +152,26 @@ impl Lexer {
                     }
 
                     result.push(Token::Array(Self::new(array_body).lex()));
+                }
+
+                // Scope
+                &"{" => {
+                    open_scope += 1;
+                    let mut scope_body = String::new();
+                    Self::next(&mut iter, &mut index);
+
+                    while aschar[index] != "}" || open_scope != 1 {
+                        if aschar[index] == "}" {
+                            open_scope -= 1;
+                        } else if aschar[index] == "{" {
+                            open_scope += 1;
+                        }
+
+                        scope_body.push_str(&(aschar[index].to_owned() + " "));
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    result.push(Token::Scope(Self::new(scope_body).lex()));
                 }
 
                 _ => {

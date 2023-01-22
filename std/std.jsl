@@ -1,11 +1,9 @@
-macro \n 10 end
+fn print -> { dup put }
 
-macro print dup put end
+fn True  -> { str true }
+fn False -> { str false }
 
-macro True str true end
-macro False str false end
-
-macro bool
+fn bool  -> {
     dup 1 eq then True
     dup 0 eq then False
-end
+}
