@@ -68,7 +68,7 @@ output:
 For now macros removed from jsl but in the next updates its might be added.
 
 # Let
-`let` is like global variables
+`let` is like global variables, unlike macros let cant hold expression only holds value `float64`
 
 usage:
 
@@ -91,6 +91,19 @@ x put
 ```
 
 this will return `30`
+
+Also you can use a `Lets` keyword to assing multiple lets in one line
+
+example:
+
+```
+1 2 3 lets x y z ok
+```
+
+This will equal to
+x = 3
+y = 2
+z = 1
 
 # Strings
 ```
@@ -125,6 +138,7 @@ example:
 1 1 eq then {
   str GOOD put
 }
+
 ```
 this will return 
 ```
