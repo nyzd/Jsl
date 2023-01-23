@@ -1,0 +1,19 @@
+2 let i 
+7 let n
+
+false let flag
+
+macro x true set flag end
+macro y false set flag end
+
+i n add times
+   i n mod dup 0 eq then x
+   i n mod dup 1 eq then y
+done
+
+macro isPrimeToString str Prime put end
+macro isNotPrimeToString str NotPrime put end
+
+flag 0 eq then isPrimeToString
+dup
+flag 1 eq then isNotPrimeToString

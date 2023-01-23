@@ -1,21 +1,23 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "jsl",
-	"patterns": [
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#strings"
-		}
-	],
-	"repository": {
-		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.jsl",
-				"match": "\\b(macro|end|times|done|import|let|lets|ok|fn|do)\\b"
-			}]
-		}
-	},
-	"scopeName": "source.jsl"
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "jsl",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.jsl",
+          "match": "\\b(macro|end|times|done|import|let|lets|ok|fn|do|asm|run)\\b"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.jsl"
 }

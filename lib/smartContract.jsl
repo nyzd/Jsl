@@ -1,19 +1,19 @@
-macro PUSH1 str 60 end
-macro POP str 50 end
-macro MSTORE str 52 end
-macro CALLVALUE str 34 end
-macro DUP1 str 80 end
-macro ISZERO str 15 end
-macro JUMPDEST str 5B end
-macro CODECOPY str 39 end
-macro RETURN str F3 end
-macro JUMPI str 57 end
-macro REVERT str FD end
-macro ADD str 01 end
-macro ADDRESS str 30 end
+fn PUSH1 -> { str 60 }
+fn POP -> { str 50 }
+fn MSTORE -> { str 52 }
+fn CALLVALUE -> { str 34 }
+fn DUP1 -> { str 80 }
+fn ISZERO -> { str 15 }
+fn JUMPDEST -> { str 5B }
+fn CODECOPY -> { str 39 }
+fn RETURN -> { str F3 }
+fn JUMPI -> { str 57 }
+fn REVERT -> { str FD }
+fn ADD -> { str 01 }
+fn ADDRESS -> { str 30 }
 
-macro contract
-    MSTORE
-    str 40 PUSH1
-    str 80 PUSH1
-end
+fn contract -> {
+    call MSTORE
+    str 40 call PUSH1
+    str 80 call PUSH1
+}

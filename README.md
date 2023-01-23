@@ -4,26 +4,26 @@ Just a stack based language
 # Build
 ```cargo build```
 
-```./target/debug/jsl source.jsl```
+```./target/debug/jsl run source.jsl```
 
 # Debug
 Show the final stack with `--stack` flag
 
 example:
 
-```./target/debug/jsl source.jsl --stack```
+```./target/debug/jsl run source.jsl --stack```
 
 this will return 0..8 of stack if you want more or less you can specify size
 
 example:
 
-```./target/debug/jsl source.jsl --stack 32```
+```./target/debug/jsl run source.jsl --stack 32```
 
 Or if you want to debug a memory(variables) you can use `--memory` flag instead of `--stack`
 
 for example:
 
-```./target/debug/jsl source.jsl --memory```
+```./target/debug/jsl run source.jsl --memory```
 
 # Functions
 Functions can defined with `fn` keyword, for example
@@ -31,11 +31,11 @@ Functions can defined with `fn` keyword, for example
 ```
 import std
 
-fn callme do
+fn callme -> {
   str Helloworld printstr
-end
+}
 
-callme
+call callme
 ```
 
 output:
@@ -47,13 +47,13 @@ HelloWorld
 also you can specify a arguments of a function after name of function for example:
 
 ```
-fn callme x y z do
+fn callme x y z -> {
   x put
   y put
   z put
-end
+}
 
-1 2 3 callme
+1 2 3 call callme
 ```
 
 output:
@@ -65,17 +65,7 @@ output:
 ```
 
 # Macros
-```
-macro x
-  1 2 add
-end
-```
-if you call macro compiler will run body of macro
-for example:
-```
-x put
-```
-will return: `3`
+For now macros removed from jsl but in the next updates its might be added.
 
 # Let
 `let` is like global variables, unlike macros let cant hold expression only holds value `float64`
@@ -117,9 +107,7 @@ z = 1
 
 # Strings
 ```
-import std
-
-str HelloWorld printstr
+str HelloWorld put
 ```
 result will be
 ```
@@ -144,13 +132,13 @@ For not equal
 will return `1`
 
 # Then
-`then` runs function if the top of stack is true
+`then` scope if the top of stack is true
 example:
 ```
-import std
+1 1 eq then {
+  str GOOD put
+}
 
-macro x str GOOD printstr end
-1 1 eq then x
 ```
 this will return 
 ```
@@ -159,14 +147,14 @@ GOOD
 # Times
 `times` is a keyword like `for` loops
 
-times will pop the top of stack and do body of times x times
+`times` will pop the top of stack and runs the next scope `x` times
 
 example:
 
 ```
-3 times
+3 times {
   1 print
-done
+}
 ```
 
 will return:
@@ -183,7 +171,7 @@ example:
 ```
 import lib.jsl
 
-test
+call test
 ```
 
 will return:
@@ -195,9 +183,9 @@ HelloWorld
 lib.jsl:
 
 ```
-macro test
+fn test -> {
   str HelloWorld putstr
-end
+}
 ```
 
 OR import standard library
