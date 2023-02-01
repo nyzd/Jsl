@@ -1,3 +1,21 @@
 macro memdrop
     mempop drop
 end
+
+macro memclear
+    memusage times
+        memdrop
+    done
+end
+
+macro memalloc
+    times
+        let alloc
+    done
+end
+
+macro memread
+    times
+        mempop
+    done
+end
