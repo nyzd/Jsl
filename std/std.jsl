@@ -1,9 +1,38 @@
-fn print -> { dup put }
+macro \n 10 end
+macro stacksize 255 end
 
-fn True  -> { str true }
-fn False -> { str false }
+macro print dup put end
 
-fn bool  -> {
+macro True str true end
+macro False str false end
+
+macro bool
     dup 1 eq then True
     dup 0 eq then False
-}
+end
+
+macro fullfill
+    stacksize times
+        255
+    done
+end
+
+macro clearstack
+    stacksize times
+        drop
+    done
+end
+
+macro printstack
+    dup stacksize times
+        dup 0.0 noteq then print
+    done
+end
+
+macro printc dup putc end
+
+macro printstr
+    dup stacksize times
+        dup 0.0 noteq then printc
+    done
+end

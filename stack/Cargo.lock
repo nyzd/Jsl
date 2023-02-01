@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "jsl"
-version = "0.1.0"
-dependencies = [
- "stack",
-]
-
-[[package]]
 name = "stack"
 version = "0.1.0"
