@@ -65,7 +65,7 @@ output:
 ```
 
 # Macros
-For now macros removed from jsl but in the next updates its might be added.
+`soon`
 
 # Let
 `let` is like global variables, unlike macros let cant hold expression only holds value `float64`
