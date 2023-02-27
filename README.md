@@ -65,6 +65,9 @@ output:
 ```
 
 # Macros
+<<<<<<< HEAD
+`soon`
+=======
 ```
 macro x
   1 2 add
@@ -76,6 +79,7 @@ for example:
 x put
 ```
 will return: `3`
+>>>>>>> 77abab8361f61ead45ee1116eeaa18884f81c9fc
 
 # Let
 `let` is like global variables, unlike macros let cant hold expression only holds value `float64`
