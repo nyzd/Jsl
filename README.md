@@ -4,26 +4,26 @@ Just a stack based language
 # Build
 ```cargo build```
 
-```./target/debug/jsl run source.jsl```
+```./target/debug/jsl source.jsl```
 
 # Debug
 Show the final stack with `--stack` flag
 
 example:
 
-```./target/debug/jsl run source.jsl --stack```
+```./target/debug/jsl source.jsl --stack```
 
 this will return 0..8 of stack if you want more or less you can specify size
 
 example:
 
-```./target/debug/jsl run source.jsl --stack 32```
+```./target/debug/jsl source.jsl --stack 32```
 
 Or if you want to debug a memory(variables) you can use `--memory` flag instead of `--stack`
 
 for example:
 
-```./target/debug/jsl run source.jsl --memory```
+```./target/debug/jsl source.jsl --memory```
 
 # Functions
 Functions can defined with `fn` keyword, for example
@@ -31,11 +31,11 @@ Functions can defined with `fn` keyword, for example
 ```
 import std
 
-fn callme -> {
+fn callme do
   str Helloworld printstr
-}
+end
 
-call callme
+callme
 ```
 
 output:
@@ -47,13 +47,13 @@ HelloWorld
 also you can specify a arguments of a function after name of function for example:
 
 ```
-fn callme x y z -> {
+fn callme x y z do
   x put
   y put
   z put
-}
+end
 
-1 2 3 call callme
+1 2 3 callme
 ```
 
 output:
@@ -65,7 +65,21 @@ output:
 ```
 
 # Macros
+<<<<<<< HEAD
 `soon`
+=======
+```
+macro x
+  1 2 add
+end
+```
+if you call macro compiler will run body of macro
+for example:
+```
+x put
+```
+will return: `3`
+>>>>>>> 77abab8361f61ead45ee1116eeaa18884f81c9fc
 
 # Let
 `let` is like global variables, unlike macros let cant hold expression only holds value `float64`
@@ -92,22 +106,11 @@ x put
 
 this will return `30`
 
-Also you can use a `Lets` keyword to assing multiple lets in one line
-
-example:
-
-```
-1 2 3 lets x y z ok
-```
-
-This will equal to
-x = 3
-y = 2
-z = 1
-
 # Strings
 ```
-str HelloWorld put
+import std
+
+str HelloWorld printstr
 ```
 result will be
 ```
@@ -132,13 +135,13 @@ For not equal
 will return `1`
 
 # Then
-`then` scope if the top of stack is true
+`then` runs function if the top of stack is true
 example:
 ```
-1 1 eq then {
-  str GOOD put
-}
+import std
 
+macro x str GOOD printstr end
+1 1 eq then x
 ```
 this will return 
 ```
@@ -147,14 +150,14 @@ GOOD
 # Times
 `times` is a keyword like `for` loops
 
-`times` will pop the top of stack and runs the next scope `x` times
+times will pop the top of stack and do body of times x times
 
 example:
 
 ```
-3 times {
+3 times
   1 print
-}
+done
 ```
 
 will return:
@@ -171,7 +174,7 @@ example:
 ```
 import lib.jsl
 
-call test
+test
 ```
 
 will return:
@@ -183,9 +186,9 @@ HelloWorld
 lib.jsl:
 
 ```
-fn test -> {
+macro test
   str HelloWorld putstr
-}
+end
 ```
 
 OR import standard library

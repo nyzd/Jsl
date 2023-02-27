@@ -1,7 +1,5 @@
 fn fib n do
-    1 let num1
-    0 let num2
-    0 let num3
+    0 0 1 lets num1 num2 num3 ok
 
     n times
         num1 num2 add set num3 
@@ -12,4 +10,4 @@ fn fib n do
     done
 end
 
-100 call fib
+100 fib
