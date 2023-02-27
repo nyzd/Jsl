@@ -31,7 +31,6 @@ impl Lexer {
         let aschar: Vec<&str> = self.source.split_whitespace().collect();
         let mut iter = aschar.iter();
         let mut index = 0;
-        let mut open_scope = 0;
 
         while let Some(word) = iter.next() {
             match word {
@@ -156,24 +155,16 @@ impl Lexer {
 
                 // Scope
                 &"{" => {
-                    open_scope += 1;
                     let mut scope_body = String::new();
                     Self::next(&mut iter, &mut index);
 
-                    while aschar[index] != "}" || open_scope != 1 {
-                        if aschar[index] == "}" {
-                            open_scope -= 1;
-                        } else if aschar[index] == "{" {
-                            open_scope += 1;
-                        }
-
+                    while aschar[index] != "}" {
                         scope_body.push_str(&(aschar[index].to_owned() + " "));
                         Self::next(&mut iter, &mut index);
                     }
 
                     result.push(Token::Scope(Self::new(scope_body).lex()));
                 }
-
                 _ => {
                     if is_string_numeric(word.to_string()) {
                         result.push(Token::Number(word.parse::<f64>().unwrap()));

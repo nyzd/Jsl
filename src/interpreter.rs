@@ -129,6 +129,8 @@ impl Interpreter {
         let mut iter = tokens.iter();
 
         while let Some(token) = iter.next() {
+
+            //println!("{:?}", token);
             match token {
                 Token::Number(n) => {
                     self.stack.push(StackType::Float(n.to_owned()));
