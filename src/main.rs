@@ -1,8 +1,9 @@
-use stack::Stack;
 use std::env;
+use std::fmt::Display;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Debug)]
 struct Macro {
@@ -31,14 +32,14 @@ fn is_string_numeric(str: String) -> bool {
     return result;
 }
 
-#[derive(Debug)]
-struct Let {
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
+pub struct Let {
     name: String,
-    value: f64,
+    value: StackType,
 }
 
-#[derive(Debug)]
-struct Function {
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
+pub struct Function {
     name: String,
     memory: Vec<Let>,
     body: String,
@@ -55,8 +56,86 @@ enum MemoryScope {
     Global,
 }
 
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
+pub enum BoxedType {
+    BoxedType(Box<BoxedType>),
+    BoxedFn(Box<Function>),
+    StackTypeBoxed(Box<StackType>),
+}
+
+#[derive(PartialEq, PartialOrd, Debug, Clone)]
+pub enum StackType {
+    Number(f64),
+    Boxed(BoxedType),
+}
+
+impl Add for StackType {
+    type Output = StackType;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Number(n) => match rhs {
+                Self::Number(rn) => StackType::Number(n + rn),
+                _ => todo!(),
+            },
+            _ => todo!(),
+        }
+    }
+}
+
+impl Sub for StackType {
+    type Output = StackType;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Number(n) => match rhs {
+                Self::Number(rn) => StackType::Number(n - rn),
+                _ => todo!(),
+            },
+            _ => todo!(),
+        }
+    }
+}
+
+impl Mul for StackType {
+    type Output = StackType;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Number(n) => match rhs {
+                Self::Number(rn) => StackType::Number(n * rn),
+                _ => todo!(),
+            },
+            _ => todo!(),
+        }
+    }
+}
+
+impl Div for StackType {
+    type Output = StackType;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Number(n) => match rhs {
+                Self::Number(rn) => StackType::Number(n / rn),
+                _ => todo!(),
+            },
+            _ => todo!(),
+        }
+    }
+}
+
+impl Display for StackType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Number(n) => write!(f, "{}", n),
+            _ => todo!(),
+        }
+    }
+}
+
 struct Interpreter {
-    pub stack: Stack,
+    pub stack: Vec<StackType>,
     pub macros: Vec<Macro>,
     pub memory: Vec<Let>,
     pub functions: Vec<Function>,
@@ -64,10 +143,21 @@ struct Interpreter {
     pub function_time: usize,
 }
 
+#[derive(Debug)]
+struct ParseError(String);
+
 impl Interpreter {
+    pub fn get_pop(&mut self) -> Result<StackType, ParseError> {
+        let Some(result )= self.stack.pop() else {
+            return Err(ParseError("Cant get inside the type".to_string()));
+        };
+
+        Ok(result)
+    }
+
     pub fn new() -> Self {
         Self {
-            stack: Stack::new(),
+            stack: Vec::with_capacity(250),
             macros: vec![],
             memory: vec![],
             functions: vec![],
@@ -76,56 +166,62 @@ impl Interpreter {
         }
     }
 
-    fn parse(&mut self, source: String) {
+    fn parse(&mut self, source: String) -> Result<(), ParseError> {
         let aschar: Vec<&str> = source.split_whitespace().collect();
         let mut iter = aschar.iter();
         let mut index = 0;
 
         while let Some(word) = iter.next() {
             if is_string_numeric(word.to_string()) {
-                self.stack.push(word.parse::<f64>().unwrap());
+                self.stack
+                    .push(StackType::Number(word.parse::<f64>().unwrap()));
             }
 
             match word {
                 //&"0" | &"1" | &"2" | &"3" | &"4" | &"5" | &"6" | &"7" | &"8" | &"9" => {}
                 &"add" => {
-                    let push = self.stack.pop() + self.stack.pop();
+                    let push = self.get_pop()? + self.get_pop()?;
                     self.stack.push(push);
                 }
                 &"minus" => {
-                    let push = self.stack.pop() - self.stack.pop();
+                    let push = self.get_pop()? - self.get_pop()?;
                     self.stack.push(push);
                 }
                 &"div" => {
-                    let push = self.stack.pop() / self.stack.pop();
+                    let push = self.get_pop()? / self.get_pop()?;
                     self.stack.push(push);
                 }
                 &"mul" => {
-                    let push = self.stack.pop() * self.stack.pop();
+                    let push = self.get_pop()? * self.get_pop()?;
                     self.stack.push(push);
                 }
                 &"swap" => {
-                    let i1 = self.stack.pop();
-                    let i2 = self.stack.pop();
+                    let i1 = self.get_pop()?;
+                    let i2 = self.get_pop()?;
 
                     self.stack.push(i1);
                     self.stack.push(i2);
                 }
                 &"rot" => {
-                    let i1 = self.stack.pop();
-                    let i2 = self.stack.pop();
-                    let i3 = self.stack.pop();
+                    let i1 = self.get_pop()?;
+                    let i2 = self.get_pop()?;
+                    let i3 = self.get_pop()?;
 
                     self.stack.push(i1);
                     self.stack.push(i2);
                     self.stack.push(i3);
                 }
                 &"put" => {
-                    println!("{}", self.stack.pop());
+                    println!("{}", self.get_pop()?);
                 }
                 &"putc" => {
-                    let pop = self.stack.pop();
-                    print!("{}", char::from_u32(pop as u32).unwrap());
+                    let get_pop = self.get_pop()?;
+                    match get_pop {
+                        StackType::Number(n) => {
+                            print!("{}", char::from_u32(n as u32).unwrap());
+                        }
+                        _ => todo!(),
+                    }
                 }
                 &"macro" => {
                     // find function name
@@ -147,36 +243,36 @@ impl Interpreter {
                 }
 
                 &"eq" => {
-                    // Pop items from stack
-                    let b = self.stack.pop() == self.stack.pop();
+                    // get_pop items from stack
+                    let b = self.get_pop()? == self.get_pop()?;
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Number(res));
                 }
 
                 &"noteq" => {
-                    // Pop items from stack
-                    let b = self.stack.pop() != self.stack.pop();
+                    // get_pop items from stack
+                    let b = self.get_pop()? != self.get_pop()?;
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Number(res));
                 }
 
                 &"bigger" => {
-                    let b = self.stack.pop() < self.stack.pop();
+                    let b = self.get_pop()? < self.get_pop()?;
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Number(res));
                 }
 
                 &"smaller" => {
-                    let b = self.stack.pop() > self.stack.pop();
+                    let b = self.get_pop()? > self.get_pop()?;
                     let res = if b == true { 1.0 } else { 0.0 };
-                    self.stack.push(res);
+                    self.stack.push(StackType::Number(res));
                 }
 
                 &"then" => {
-                    let stk = self.stack.pop();
-                    if stk == 1.0 {
+                    let stk = self.get_pop()?;
+                    if stk == StackType::Number(1.0) {
                         // Run next code
-                        self.parse(aschar[index].to_string());
+                        self.parse(aschar[index].to_string())?;
                     } else {
                         iter.next();
                     }
@@ -184,32 +280,32 @@ impl Interpreter {
 
                 &"dup" => {
                     // Duplicate top of stack
-                    let item = self.stack.pop();
+                    let item = self.get_pop()?;
 
-                    self.stack.push(item);
+                    self.stack.push(item.clone());
                     self.stack.push(item);
                 }
                 &"2dup" => {
                     // Duplicate top of stack
-                    let item1 = self.stack.pop();
-                    let item2 = self.stack.pop();
+                    let item1 = self.get_pop()?;
+                    let item2 = self.get_pop()?;
 
-                    self.stack.push(item1);
-                    self.stack.push(item2);
+                    self.stack.push(item1.clone());
+                    self.stack.push(item2.clone());
                     self.stack.push(item1);
                     self.stack.push(item2);
                 }
 
                 &"true" => {
-                    self.stack.push(1.);
+                    self.stack.push(StackType::Number(1.));
                 }
 
                 &"false" => {
-                    self.stack.push(0.);
+                    self.stack.push(StackType::Number(0.));
                 }
 
                 &"drop" => {
-                    self.stack.pop();
+                    self.get_pop()?;
                 }
 
                 &"str" => {
@@ -220,13 +316,13 @@ impl Interpreter {
 
                     // get word as a ASCII
                     for byte in content.as_bytes().iter().rev() {
-                        self.stack.push((*byte).into());
+                        self.stack.push(StackType::Number((*byte).into()));
                     }
                 }
 
                 &"times" => {
                     // Run code x times
-                    let x = self.stack.pop() as u32;
+                    let x = self.get_pop()?;
                     let mut times_body = String::new();
 
                     Self::next(&mut iter, &mut index);
@@ -238,8 +334,14 @@ impl Interpreter {
                         iter.next();
                     }
 
-                    for _i in 0..x {
-                        self.parse(times_body.clone());
+                    match x {
+                        StackType::Number(n) => {
+                            for _i in 0..(n as u32) {
+                                self.parse(times_body.clone())?;
+                            }
+                        }
+
+                        _ => todo!(),
                     }
                 }
 
@@ -262,7 +364,7 @@ impl Interpreter {
                             contents
                         }
                     };
-                    self.parse(result);
+                    self.parse(result)?;
 
                     iter.next();
                 }
@@ -274,16 +376,18 @@ impl Interpreter {
 
                     Self::next(&mut iter, &mut index);
 
+                    let value = self.get_pop()?;
+
                     match self.mem_scope {
                         MemoryScope::Function => {
                             self.functions[self.function_time].memory.push(Let {
                                 name: let_name.to_string(),
-                                value: self.stack.pop(),
+                                value,
                             })
                         }
                         MemoryScope::Global => self.memory.push(Let {
                             name: let_name.to_string(),
-                            value: self.stack.pop(),
+                            value,
                         }),
                     }
                 }
@@ -295,62 +399,24 @@ impl Interpreter {
 
                     Self::next(&mut iter, &mut index);
 
+                    let value = self.get_pop()?;
+
                     match self.mem_scope {
                         MemoryScope::Function => {
                             let function = &mut self.functions[self.function_time];
 
                             match function.memory.iter().position(|l| l.name == let_name) {
-                                Some(l) => function.memory[l].value = self.stack.pop(),
+                                Some(l) => function.memory[l].value = value,
                                 None => panic!("Let is not defined!"),
                             }
                         }
                         MemoryScope::Global => {
                             match self.memory.iter().position(|l| l.name == let_name) {
-                                Some(l) => self.memory[l].value = self.stack.pop(),
+                                Some(l) => self.memory[l].value = value,
                                 None => panic!("Let is not defined!"),
                             }
                         }
                     }
-                }
-
-                &"lets" => {
-                    Self::next(&mut iter, &mut index);
-                    match self.mem_scope {
-                        MemoryScope::Function => {
-                            while aschar[index] != "ok" {
-                                // Create a new let in memory
-                                self.functions[self.function_time].memory.push(Let {
-                                    name: aschar[index].to_string(),
-                                    value: self.stack.pop(),
-                                });
-                                index += 1;
-                                iter.next();
-                            }
-                        }
-                        MemoryScope::Global => {
-                            while aschar[index] != "ok" {
-                                // Create a new let in memory
-                                self.memory.push(Let {
-                                    name: aschar[index].to_string(),
-                                    value: self.stack.pop(),
-                                });
-                                index += 1;
-                                iter.next();
-                            }
-                        }
-                    }
-                }
-
-                &"mempop" => {
-                    match self.memory.pop() {
-                        Some(x) => self.stack.push(x.value),
-                        None => self.stack.push(0.0),
-                    };
-                }
-
-                &"memusage" => {
-                    // return length of created variables
-                    self.stack.push(self.memory.len() as f64);
                 }
 
                 &"fn" => {
@@ -364,7 +430,7 @@ impl Interpreter {
                     while aschar[index] != "do" {
                         fn_args.push(Let {
                             name: aschar[index].to_string(),
-                            value: 0.0,
+                            value: StackType::Number(0.0),
                         });
                         Self::next(&mut iter, &mut index);
                     }
@@ -381,11 +447,43 @@ impl Interpreter {
                         .push(Function::new(fn_name.to_string(), fn_args, fn_body));
                 }
 
+                &"box" => {
+                    let data = self.get_pop()?;
+                    let boxed = match data {
+                        StackType::Boxed(bx) => BoxedType::BoxedType(Box::new(bx)),
+                        StackType::Number(num) => {
+                            BoxedType::StackTypeBoxed(Box::new(StackType::Number(num)))
+                        }
+                    };
+
+                    self.stack.push(StackType::Boxed(boxed));
+                }
+
+                &"boxfn" => {
+                    let data = self.functions.pop();
+                    let boxed: Box<Function> = Box::new(data.unwrap());
+                    self.stack.push(StackType::Boxed(BoxedType::BoxedFn(boxed)));
+                }
+
+                &"unbox" => {
+                    let boxed = self.get_pop()?;
+                    match boxed {
+                        StackType::Boxed(boxed_t) => match boxed_t {
+                            BoxedType::BoxedType(bt) => {
+                                self.stack.push(StackType::Boxed(bt.as_ref().clone()))
+                            }
+                            BoxedType::BoxedFn(bf) => self.functions.push(bf.as_ref().clone()),
+                            BoxedType::StackTypeBoxed(stb) => self.stack.push(stb.as_ref().clone()),
+                        },
+                        _ => panic!("unbox just works for boxed types"),
+                    };
+                }
+
                 _ => {
                     // maybe its a macro name ?
                     match self.macros.iter().position(|f| f.name == word.to_string()) {
                         Some(ok) => {
-                            self.parse(self.macros[ok].body.clone());
+                            self.parse(self.macros[ok].body.clone())?;
                         }
                         None => {}
                     };
@@ -394,7 +492,7 @@ impl Interpreter {
                         MemoryScope::Global => {
                             match self.memory.iter().position(|l| l.name == word.to_string()) {
                                 Some(ok) => {
-                                    self.stack.push(self.memory[ok].value);
+                                    self.stack.push(self.memory[ok].value.clone());
                                 }
                                 None => {}
                             }
@@ -404,7 +502,7 @@ impl Interpreter {
                             let args = &self.functions[self.function_time].memory;
                             match args.iter().position(|l| l.name == word.to_string()) {
                                 Some(ok) => {
-                                    self.stack.push(args[ok].value);
+                                    self.stack.push(args[ok].value.clone());
                                 }
 
                                 None => {}
@@ -418,13 +516,14 @@ impl Interpreter {
                         .position(|f| f.name == word.to_string())
                     {
                         Some(ok) => {
+                            let value = self.get_pop()?;
                             self.function_time = ok;
                             let mut args = self.functions[ok].memory.iter_mut();
                             while let Some(arg) = args.next() {
-                                arg.value = self.stack.pop();
+                                arg.value = value.clone();
                             }
                             self.mem_scope = MemoryScope::Function;
-                            self.parse(self.functions[ok].body.to_string());
+                            self.parse(self.functions[ok].body.to_string())?;
                             self.mem_scope = MemoryScope::Global;
                         }
                         None => {}
@@ -434,6 +533,8 @@ impl Interpreter {
 
             index += 1;
         }
+
+        Ok(())
     }
 
     fn next<T>(iter: &mut T, index: &mut usize)
@@ -455,20 +556,15 @@ fn main() -> io::Result<()> {
     file.read_to_string(&mut contents)?;
 
     let mut i = Interpreter::new();
-    i.parse(contents);
+    i.parse(contents).unwrap();
 
     match args.get(2) {
         Some(arg) => {
-            if arg == "--stack" {
-                let size = match args.get(3) {
-                    Some(num) => num.parse::<usize>().unwrap(),
-                    None => 8,
-                };
-                println!("\n{:?}", &i.stack.items[0..size]);
-            }
-
             if arg == "--memory" {
                 println!("\n{:?}", &i.memory);
+            }
+            if arg == "--stack" {
+                println!("\n{:?}", &i.stack);
             }
         }
         None => {}
