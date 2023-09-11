@@ -1,8 +1,5 @@
 use crate::{token::Token, types::*};
-use std::{
-    ops::{Add, Div, Mul, Rem, Sub},
-    path::Path,
-};
+use std::ops::{Add, Div, Mul, Rem, Sub};
 
 trait Size {
     fn get_size(&self) -> usize;
@@ -129,7 +126,6 @@ impl Interpreter {
         let mut iter = tokens.iter();
 
         while let Some(token) = iter.next() {
-
             //println!("{:?}", token);
             match token {
                 Token::Number(n) => {
@@ -347,107 +343,26 @@ impl Interpreter {
                     self.parse(tokens.to_owned());
                 }
 
-                Token::Ident(name) => {
-                    match self.mem_scope {
-                        MemoryScope::Global => {
-                            match self.memory.iter().position(|l| &l.name == name) {
-                                Some(ok) => {
-                                    self.stack.push(self.memory[ok].value.clone());
-                                }
-                                None => {}
-                            }
+                Token::Ident(name) => match self.mem_scope {
+                    MemoryScope::Global => match self.memory.iter().position(|l| &l.name == name) {
+                        Some(ok) => {
+                            self.stack.push(self.memory[ok].value.clone());
                         }
-
-                        MemoryScope::Function => {
-                            let args = &self.functions[self.function_time].memory;
-                            match args.iter().position(|l| &l.name == name) {
-                                Some(ok) => {
-                                    self.stack.push(args[ok].value.clone());
-                                }
-
-                                None => {}
-                            }
-                        }
-                    }
-                    self.match_rstd(name);
-                }
-            }
-        }
-    }
-
-    fn match_rstd(&mut self, name: &str) {
-        // rstd functions
-        match name {
-            "fs::readFile" => {
-                let file_path = self.stack.pop().unwrap();
-                match file_path {
-                    StackType::String(str) => {
-                        let content = rstd::fs::read_file(Path::new(&str).to_path_buf()).unwrap();
-                        self.stack.push(StackType::String(content));
-                    }
-                    _ => panic!("Cant pass not string type to readFile"),
-                }
-            }
-            "fs::createFile" => {
-                let file_content = self.stack.pop().unwrap();
-                let file_path = self.stack.pop().unwrap();
-
-                match file_path {
-                    StackType::String(path) => match file_content {
-                        StackType::String(content) => {
-                            rstd::fs::create_file(Path::new(&path).to_path_buf(), content).unwrap();
-                        }
-
-                        _ => panic!("Invalid item type"),
-                    },
-                    _ => panic!("Invalid item type"),
-                };
-            }
-            "length" => {
-                let item = self.stack.pop().unwrap().get_size() as f64;
-                self.stack.push(StackType::Float(item));
-            }
-            "array::nth" => {
-                let nth = self.stack.pop().unwrap();
-                let array = self.stack.pop().unwrap();
-
-                match array {
-                    StackType::Array(arr) => match nth {
-                        StackType::Float(f) => {
-                            self.stack.push(arr.get(f as usize).unwrap().to_owned());
-                        }
-                        _ => panic!("index must be a f64 type"),
+                        None => {}
                     },
 
-                    _ => panic!("Cant get nth from not array type"),
-                }
-            }
-            "array::pop" => {
-                let array = self.stack.pop().unwrap();
+                    MemoryScope::Function => {
+                        let args = &self.functions[self.function_time].memory;
+                        match args.iter().position(|l| &l.name == name) {
+                            Some(ok) => {
+                                self.stack.push(args[ok].value.clone());
+                            }
 
-                match array {
-                    StackType::Array(mut arr) => {
-                        self.stack.push(arr.pop().unwrap());
-                        self.stack.push(StackType::Array(arr));
+                            None => {}
+                        }
                     }
-
-                    _ => panic!("Cant get pop from not array type"),
-                }
+                },
             }
-            "array::push" => {
-                let value = self.stack.pop().unwrap();
-                let array = self.stack.pop().unwrap();
-
-                match array {
-                    StackType::Array(a) => {
-                        let mut new_array = a.clone();
-                        new_array.push(value);
-                        self.stack.push(StackType::Array(new_array));
-                    }
-                    _ => panic!("You cant push Value to not array value"),
-                }
-            }
-            _ => {}
         }
     }
 }
