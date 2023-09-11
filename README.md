@@ -6,25 +6,6 @@ Just a stack based language
 
 ```./target/debug/jsl source.jsl```
 
-# Debug
-Show the final stack with `--stack` flag
-
-example:
-
-```./target/debug/jsl source.jsl --stack```
-
-this will return 0..8 of stack if you want more or less you can specify size
-
-example:
-
-```./target/debug/jsl source.jsl --stack 32```
-
-Or if you want to debug a memory(variables) you can use `--memory` flag instead of `--stack`
-
-for example:
-
-```./target/debug/jsl source.jsl --memory```
-
 # Functions
 Functions can defined with `fn` keyword, for example
 
