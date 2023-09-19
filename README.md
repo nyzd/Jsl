@@ -45,6 +45,26 @@ output:
 1
 ```
 
+# Object
+You can define object in Jsl with `object` keyword
+
+example:
+
+```
+object {
+    x = 1
+    y = 2
+}
+```
+
+This will push the pointer to the object to stack
+
+also you can get the property of object with `get` keyword like:
+
+```
+get x
+```
+
 # Let
 `let` is like global variables, unlike macros let cant hold expression only holds value `float64`
 
@@ -72,9 +92,7 @@ this will return `30`
 
 # Strings
 ```
-import std
-
-str HelloWorld printstr
+str HelloWorld put
 ```
 result will be
 ```
@@ -149,13 +167,6 @@ lib.jsl:
 fn test -> {
   str HelloWorld putstr
 }
-```
-
-OR import standard library
-
-```
-import std
-import math
 ```
 
 # Resource
