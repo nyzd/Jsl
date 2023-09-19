@@ -157,3 +157,8 @@ OR import standard library
 import std
 import math
 ```
+
+# Resource
+Reverse Polish notation. (2023, August 14). In Wikipedia. https://en.wikipedia.org/wiki/Reverse_Polish_notation
+
+Stack-oriented programming. (2023, July 30). In Wikipedia. https://en.wikipedia.org/wiki/Stack-oriented_programming
