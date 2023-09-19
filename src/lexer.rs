@@ -174,6 +174,37 @@ impl Lexer {
                     result.push(Token::Scope(Self::new(scope_body).lex()));
                 }
 
+                &"object" => {
+                    Self::next(&mut iter, &mut index);
+                    Self::next(&mut iter, &mut index);
+
+                    let mut properties: Vec<(String, Token)>= Vec::new();
+
+                    while aschar[index] != "}" {
+                        if aschar[index + 1] != "=" {
+                            panic!("You must define property with equal (=)");
+                        }
+                        let property_name = aschar[index];
+                        let property_value = aschar[index + 2]; // 1 is ':' char
+
+                        properties.push(
+                            (property_name.to_owned(), Self::new(property_value.to_owned()).lex().get(0).unwrap().clone())
+                        );
+
+                        Self::next(&mut iter, &mut index);
+                        Self::next(&mut iter, &mut index);
+                        Self::next(&mut iter, &mut index);
+                    }
+
+                    result.push(Token::Object(properties));
+                }
+
+                &"get" => {
+                    let property_name = aschar[index + 1];
+                    Self::next(&mut iter, &mut index);
+                    result.push(Token::Get(property_name.to_string()));
+                }
+
                 _ => {
                     if is_string_numeric(word.to_string()) {
                         result.push(Token::Number(word.parse::<f64>().unwrap()));

@@ -28,6 +28,8 @@ pub enum Token {
     Mempop,
     Memusage,
     Function(Function),
+    Object(Vec<(String, Token)>),
+    Get(String),
     Call(String),
     Ident(String),
     Array(Vec<Token>),

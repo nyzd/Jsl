@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::{token::Token, types::*};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
@@ -12,6 +13,7 @@ pub enum MemoryScope {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum StackType {
+    Pointer(usize),
     Float(f64),
     String(String),
     Array(Vec<StackType>),
@@ -21,6 +23,7 @@ impl Size for StackType {
     fn get_size(&self) -> usize {
         match self {
             StackType::Float(f) => *f as usize,
+            StackType::Pointer(p) => *p,
             StackType::Array(vec) => vec.len(),
             StackType::String(string) => string.len(),
         }
@@ -31,6 +34,7 @@ impl StackType {
     fn print(self) {
         match self {
             Self::Float(f) => println!("{}", f),
+            Self::Pointer(p) => println!("0x{:x}", p),
             Self::String(str) => println!("{}", str),
             Self::Array(vec) => println!("{:?}", vec),
         }
@@ -43,9 +47,13 @@ impl Add for StackType {
         match self {
             Self::Float(f) => match rhs {
                 Self::Float(rf) => Self::Float(f + rf),
-                _ => panic!("Cant Div"),
+                _ => panic!("Can't Add not float type to float"),
             },
-            _ => panic!("Cant Div"),
+            Self::Pointer(p) => match rhs {
+                Self::Pointer(rp) => Self::Pointer(p + rp),
+                _ => panic!("Can't Add not pointer to pointer"),
+            },
+            _ => panic!("Can't Add"),
         }
     }
 }
@@ -56,9 +64,14 @@ impl Sub for StackType {
         match self {
             Self::Float(f) => match rhs {
                 Self::Float(rf) => Self::Float(f - rf),
-                _ => panic!("Cant Div"),
+                _ => panic!("Can't Subtract not float to float"),
             },
-            _ => panic!("Cant Div"),
+
+            Self::Pointer(p) => match rhs {
+                Self::Pointer(rp) => Self::Pointer(p - rp),
+                _ => panic!("Can't Subtract not pointer to pointer"),
+            },
+            _ => panic!("Can't Subtract"),
         }
     }
 }
@@ -69,10 +82,15 @@ impl Div for StackType {
         match self {
             Self::Float(f) => match rhs {
                 Self::Float(rf) => Self::Float(f / rf),
-                _ => panic!("Cant Div"),
+                _ => panic!("Can't Divide not float to float"),
             },
 
-            _ => panic!("Cant Div"),
+            Self::Pointer(p) => match rhs {
+                Self::Pointer(rp) => Self::Pointer(p / rp),
+                _ => panic!("Can't Divide not pointer to pointer"),
+            },
+
+            _ => panic!("Can't Divide"),
         }
     }
 }
@@ -83,9 +101,15 @@ impl Mul for StackType {
         match self {
             Self::Float(f) => match rhs {
                 Self::Float(rf) => Self::Float(f * rf),
-                _ => panic!("Cant Div"),
+                _ => panic!("Can't Multiply not float to float"),
             },
-            _ => panic!("Cant Div"),
+
+
+            Self::Pointer(p) => match rhs {
+                Self::Pointer(rp) => Self::Pointer(p * rp),
+                _ => panic!("Can't Multiply not pointer to pointer"),
+            },
+            _ => panic!("Can't Multiply"),
         }
     }
 }
@@ -96,14 +120,31 @@ impl Rem for StackType {
         match self {
             Self::Float(f) => match rhs {
                 Self::Float(rf) => Self::Float(f % rf),
-                _ => panic!("Cant Div"),
+                _ => panic!("Can't Rem not float to float"),
             },
-            _ => panic!("Cant Div"),
+
+            Self::Pointer(p) => match rhs {
+                Self::Pointer(rp) => Self::Pointer(p % rp),
+                _ => panic!("Can't Rem not pointer to pointer"),
+            },
+            _ => panic!("Can't Rem"),
         }
     }
 }
 
+#[derive(Debug)]
+pub struct ObjectData {
+    properties: HashMap<String, Token>,
+}
+
+/// Heap data type
+#[derive(Debug)]
+pub enum HeapData {
+    Object(ObjectData),
+}
+
 pub struct Interpreter {
+    pub heap: Vec<HeapData>,
     pub stack: Vec<StackType>,
     pub memory: Vec<Let>,
     pub functions: Vec<Function>,
@@ -114,6 +155,7 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
+            heap: Vec::new(),
             stack: Vec::with_capacity(255),
             memory: vec![],
             functions: vec![],
@@ -259,6 +301,36 @@ impl Interpreter {
 
                 Token::Import(tks) => {
                     self.parse(tks.to_vec());
+                }
+
+                Token::Object(props) => {
+                    let props = props
+                        .to_owned()
+                        .into_iter();
+
+                    let object_properties =
+                        HashMap::from_iter(props);
+
+                    self.heap.push(HeapData::Object(ObjectData { properties: object_properties }));
+                    self.stack.push(StackType::Pointer(self.heap.len() - 1));
+                }
+
+                // Get the prop of object
+                Token::Get(prop_name) => {
+                    let obj_ptr = self.stack.pop().unwrap();
+
+                    let obj_ptr = match obj_ptr{
+                        StackType::Pointer(ptr) => ptr,
+                        _ => panic!("get keyword needs a pointer data on stack"),
+                    };
+
+                    match self.heap.get(obj_ptr).unwrap() {
+                        HeapData::Object(obj) => {
+                            self.parse(vec![obj.properties.get(prop_name).unwrap().clone()]);
+                        }
+
+                        // _ => panic!("The pointer is not pointing to object")
+                    };
                 }
 
                 Token::Let(name) => match self.mem_scope {
